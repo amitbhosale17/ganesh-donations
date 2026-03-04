@@ -59,7 +59,7 @@ def get_local_ip():
         
         # Connect to Google's public DNS server (8.8.8.8) on port 80
         # This doesn't send any data, just figures out which interface would be used
-        s.connect((\"8.8.8.8\", 80))
+        s.connect(("8.8.8.8", 80))
         
         # Get the local side of the socket connection (our IP address)
         # getsockname() returns (ip, port) tuple, we want [0] = IP address
