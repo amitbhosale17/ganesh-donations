@@ -22,7 +22,7 @@ JWT Tokens:
 Endpoints:
 - POST /auth/login: Login with credentials
 - POST /auth/refresh: Get new access token using refresh token
-\"\"\"
+"""
 
 # Import Flask utilities for routing and request/response handling
 from flask import Blueprint, request, jsonify
