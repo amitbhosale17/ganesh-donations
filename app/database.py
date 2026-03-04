@@ -202,7 +202,7 @@ def get_transaction():
     Transaction Guarantees (ACID):
     - Atomicity: All operations succeed together or all fail together
     - Consistency: Database remains in valid state
-    - Isolation: Other transactions don't see partial results
+    - Isolation: Other transactions do not see partial results
     - Durability: Committed changes are permanent
     
     Usage Example:
