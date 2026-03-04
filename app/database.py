@@ -59,7 +59,8 @@ pool = None
 
 
 def init_db_pool():
-    """Initialize database connection pool
+    """
+    Initialize database connection pool
     
     Purpose:
     - Creates a pool of reusable PostgreSQL connections
