@@ -28,14 +28,14 @@ Key Concepts:
 Usage Examples:
     # Execute a query and commit
     with get_db_cursor(commit=True) as cur:
-        cur.execute(\"INSERT INTO users (name) VALUES (%s)\", (\"John\",))
+        cur.execute("INSERT INTO users (name) VALUES (%s)", ("John",))
     
     # Execute multiple operations in a transaction
     with get_transaction() as cur:
-        cur.execute(\"UPDATE accounts SET balance = balance - 100 WHERE id = 1\")
-        cur.execute(\"UPDATE accounts SET balance = balance + 100 WHERE id = 2\")
+        cur.execute("UPDATE accounts SET balance = balance - 100 WHERE id = 1")
+        cur.execute("UPDATE accounts SET balance = balance + 100 WHERE id = 2")
         # Both succeed or both fail together
-\"\"\"
+"""
 
 # Import psycopg3 - modern PostgreSQL database adapter for Python
 import psycopg
