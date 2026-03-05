@@ -79,6 +79,13 @@ CREATE TABLE IF NOT EXISTS DonationCategory (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- ReceiptSequence table - for atomic receipt number generation
+CREATE TABLE IF NOT EXISTS ReceiptSequence (
+    tenant_id INTEGER PRIMARY KEY REFERENCES Tenant(id),
+    last_no INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- System tenant
 INSERT INTO Tenant (id, name, address, receipt_prefix) 
 VALUES (0, 'System', 'System', 'SYS')
