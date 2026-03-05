@@ -114,6 +114,13 @@ def run_migrations():
 
 # Main entry point - only runs when script is executed directly (not when imported)
 if __name__ == "__main__":
+    # Step 0: Run auto-migration for ReceiptSequence table (hotfix)
+    try:
+        from run_migration_auto import run_migration
+        run_migration()
+    except Exception as e:
+        print(f"⚠️  Auto-migration warning: {e}")
+    
     # Step 1: Run all database migrations before starting the server
     # This ensures the database schema is up-to-date with the application code
     # Includes creating tables, columns, indexes, and default data (like superadmin user)
