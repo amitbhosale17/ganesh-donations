@@ -86,8 +86,8 @@ def get_recent_donations(user):
                     d.donor_name,
                     d.donor_phone,
                     d.amount,
-                    d.payment_mode,
-                    d.receipt_number,
+                    d.payment_mode as method,
+                    d.receipt_number as receipt_no,
                     d.created_at,
                     d.payment_status,
                     u.name as collector_name
