@@ -188,6 +188,17 @@ except Exception as e:
     # Log error but don't stop app (allows debugging even with migration failures)
     logger.error(f"Failed to run migrations: {e}")
 
+# Run auto-migration for ReceiptSequence table (hotfix)
+try:
+    import sys
+    import os
+    # Add parent directory to path so we can import run_migration_auto
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from run_migration_auto import run_migration
+    run_migration()
+except Exception as e:
+    logger.warning(f"Auto-migration warning: {e}")
+
 # ============================================
 # INITIALIZE DATABASE CONNECTION POOL
 # ============================================
