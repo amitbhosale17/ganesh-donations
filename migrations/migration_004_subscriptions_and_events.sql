@@ -70,19 +70,23 @@ INSERT INTO EventTypes (name, name_hindi, name_marathi, religion, color) VALUES
 ('General Donation', 'सामान्य दान', 'सामान्य देणगी', 'General', '#4169E1')
 ON CONFLICT (name) DO NOTHING;
 
--- Add event_type_id to Tenant table
+-- Add religion to Tenant table (Super Admin assigns religion when creating Mandal)
+-- This allows Mandals to organize MULTIPLE events of THEIR religion
 DO $$ 
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                   WHERE table_name='tenant' AND column_name='event_type_id') THEN
-        ALTER TABLE Tenant ADD COLUMN event_type_id INTEGER REFERENCES EventTypes(id);
+                   WHERE table_name='tenant' AND column_name='religion') THEN
+        ALTER TABLE Tenant ADD COLUMN religion VARCHAR(50) DEFAULT 'Hindu';
     END IF;
 END $$;
 
--- Set default event type for existing tenants (Ganesh Chaturthi)
+-- Set default religion for existing tenants (Hindu)
 UPDATE Tenant 
-SET event_type_id = (SELECT id FROM EventTypes WHERE name = 'Ganesh Chaturthi' LIMIT 1)
-WHERE event_type_id IS NULL;
+SET religion = 'Hindu'
+WHERE religion IS NULL OR religion = '';
+
+-- Add comment explaining the model
+COMMENT ON COLUMN Tenant.religion IS 'Mandal religion: Hindu/Muslim/Buddhist/Sikh/Christian/Jain/General. Mandal can create events matching their religion only.';
 
 -- Table: Organization Events (organizations can run multiple events)
 CREATE TABLE IF NOT EXISTS OrganizationEvents (

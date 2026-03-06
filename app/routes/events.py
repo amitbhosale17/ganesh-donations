@@ -7,28 +7,37 @@ bp = Blueprint('events', __name__, url_prefix='/events')
 
 
 @bp.route("/types", methods=["GET"])
-def get_event_types():
-    """Get all event types (public endpoint for onboarding)"""
+@require_auth
+def get_event_types(user):
+    """Get event types filtered by tenant's religion (for creating events)"""
+    tenant_id = user.get('tenant_id')
+    
     try:
         with get_db_cursor() as cursor:
+            # Get tenant's religion first
+            cursor.execute("""
+                SELECT religion FROM Tenant WHERE id = %s
+            """, (tenant_id,))
+            
+            tenant_row = cursor.fetchone()
+            if not tenant_row:
+                return jsonify({
+                    'success': False,
+                    'error': 'Tenant not found'
+                }), 404
+            
+            tenant_religion = tenant_row['religion']
+            
+            # Get event types matching tenant's religion
             cursor.execute("""
                 SELECT 
                     id, name, name_hindi, name_marathi, religion,
                     icon_url, color, is_active
                 FROM EventTypes
-                WHERE is_active = TRUE
-                ORDER BY 
-                    CASE religion
-                        WHEN 'Hindu' THEN 1
-                        WHEN 'Muslim' THEN 2
-                        WHEN 'Buddhist' THEN 3
-                        WHEN 'Sikh' THEN 4
-                        WHEN 'Christian' THEN 5
-                        WHEN 'Jain' THEN 6
-                        ELSE 7
-                    END,
-                    name
-            """)
+                WHERE is_active = TRUE 
+                  AND (religion = %s OR religion = 'General')
+                ORDER BY name
+            """, (tenant_religion,))
             
             event_types = []
             for row in cursor.fetchall():
@@ -45,7 +54,8 @@ def get_event_types():
             
             return jsonify({
                 'success': True,
-                'event_types': event_types
+                'event_types': event_types,
+                'tenant_religion': tenant_religion
             })
     
     except Exception as e:

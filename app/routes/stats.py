@@ -112,3 +112,79 @@ def get_recent_donations(user):
         print(f"Error getting recent donations: {e}")
         # Return empty array instead of 500 error
         return jsonify([])
+
+
+@bp.route("/yearly", methods=["GET"])
+@require_auth
+def get_yearly_stats(user):
+    """Get year-wise donation statistics for the mandal admin"""
+    try:
+        tenant_id = user['tenant_id']
+        
+        with get_db_cursor() as cursor:
+            # Get yearly statistics
+            cursor.execute("""
+                SELECT 
+                    donation_year as year,
+                    COUNT(*) as total_donations,
+                    COALESCE(SUM(CASE WHEN payment_status = 'PAID' THEN amount ELSE 0 END), 0) as total_paid,
+                    COALESCE(SUM(CASE WHEN payment_status = 'PENDING' THEN amount ELSE 0 END), 0) as total_pending,
+                    COUNT(DISTINCT collector_id) as active_collectors,
+                    COUNT(DISTINCT donor_phone) as unique_donors,
+                    MIN(created_at) as first_donation,
+                    MAX(created_at) as last_donation
+                FROM Donation
+                WHERE tenant_id = %s 
+                  AND donation_year IS NOT NULL
+                GROUP BY donation_year
+                ORDER BY donation_year DESC
+            """, (tenant_id,))
+            
+            yearly_stats = []
+            for row in cursor.fetchall():
+                yearly_stats.append({
+                    'year': row['year'],
+                    'total_donations': row['total_donations'],
+                    'total_paid': float(row['total_paid']),
+                    'total_pending': float(row['total_pending']),
+                    'active_collectors': row['active_collectors'],
+                    'unique_donors': row['unique_donors'],
+                    'first_donation': row['first_donation'].isoformat() if row['first_donation'] else None,
+                    'last_donation': row['last_donation'].isoformat() if row['last_donation'] else None
+                })
+            
+            # Get current year's monthly breakdown
+            current_year = datetime.now().year
+            cursor.execute("""
+                SELECT 
+                    EXTRACT(MONTH FROM created_at) as month,
+                    COUNT(*) as count,
+                    COALESCE(SUM(amount), 0) as amount
+                FROM Donation
+                WHERE tenant_id = %s 
+                  AND donation_year = %s
+                  AND payment_status = 'PAID'
+                GROUP BY EXTRACT(MONTH FROM created_at)
+                ORDER BY month
+            """, (tenant_id, current_year))
+            
+            monthly_data = []
+            for row in cursor.fetchall():
+                monthly_data.append({
+                    'month': int(row['month']),
+                    'count': row['count'],
+                    'amount': float(row['amount'])
+                })
+            
+            return jsonify({
+                'success': True,
+                'yearly_stats': yearly_stats,
+                'current_year_monthly': monthly_data
+            })
+    
+    except Exception as e:
+        print(f"Error getting yearly stats: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
