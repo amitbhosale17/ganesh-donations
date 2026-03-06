@@ -152,18 +152,6 @@ CREATE TABLE IF NOT EXISTS OrganizationEvents (
     UNIQUE(tenant_id, event_type_id, event_year) -- One event type per year per tenant
 );
 
--- Add foreign key for event_id in Donation table
-DO $$ 
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.table_constraints 
-        WHERE constraint_name = 'donation_event_id_fkey'
-    ) THEN
-        ALTER TABLE Donation ADD CONSTRAINT donation_event_id_fkey 
-        FOREIGN KEY (event_id) REFERENCES OrganizationEvents(id) ON DELETE SET NULL;
-    END IF;
-END $$;
-
 -- ============================================
 -- PHASE 4: SUBSCRIPTION MANAGEMENT
 -- ============================================
@@ -265,6 +253,18 @@ END $$;
 -- PHASE 2: Update existing donations to have year from created_at
 UPDATE Donation SET donation_year = EXTRACT(YEAR FROM created_at) 
 WHERE donation_year IS NULL AND created_at IS NOT NULL;
+
+-- PHASE 3: Add foreign key for event_id in Donation table (AFTER column is added)
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'donation_event_id_fkey'
+    ) THEN
+        ALTER TABLE Donation ADD CONSTRAINT donation_event_id_fkey 
+        FOREIGN KEY (event_id) REFERENCES OrganizationEvents(id) ON DELETE SET NULL;
+    END IF;
+END $$;
 
 -- ============================================
 -- INDEXES for Performance
