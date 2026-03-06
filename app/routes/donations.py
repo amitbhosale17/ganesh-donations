@@ -137,7 +137,7 @@ def create_bulk_donations(user):
                         INSERT INTO Donation 
                         (tenant_id, collector_id, donor_name, donor_phone, amount, payment_mode, 
                          receipt_number, notes, category, is_recurring_donor, payment_status)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'COMPLETED')
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 'PAID')
                         RETURNING id, receipt_number
                     """, (
                         user['tenant_id'],
@@ -185,12 +185,37 @@ def list_donations(user):
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     search = request.args.get('search')
+    payment_status = request.args.get('payment_status')  # NEW: Filter by status
+    year = request.args.get('year')  # NEW: Filter by year
+    collector_id = request.args.get('collector_id')  # NEW: Filter by collector
+    min_amount = request.args.get('min_amount')  # NEW: Min amount filter
+    max_amount = request.args.get('max_amount')  # NEW: Max amount filter
+    
+    # Validate filter ranges
+    if min_amount and max_amount:
+        try:
+            if float(min_amount) > float(max_amount):
+                return jsonify({"error": "min_amount cannot exceed max_amount"}), 400
+        except ValueError:
+            return jsonify({"error": "Invalid amount values"}), 400
+    
+    if start_date and end_date:
+        try:
+            from datetime import datetime as dt
+            start = dt.fromisoformat(start_date.replace('Z', '+00:00'))
+            end = dt.fromisoformat(end_date.replace('Z', '+00:00'))
+            if start > end:
+                return jsonify({"error": "start_date cannot be after end_date"}), 400
+        except (ValueError, AttributeError):
+            return jsonify({"error": "Invalid date format. Use YYYY-MM-DD"}), 400
     
     query = """
         SELECT 
             d.id, d.donor_name, d.donor_phone, d.donor_address, d.donor_pan,
-            d.amount, d.payment_mode, d.receipt_number, d.notes, 
-            d.created_at, d.payment_status, u.name as collector_name
+            d.amount, d.payment_mode as method, d.receipt_number, d.notes, 
+            d.created_at, d.payment_status, d.donation_year,
+            d.category, d.payment_date, d.collector_notes,
+            u.name as collector_name, u.id as collector_id
         FROM Donation d
         LEFT JOIN "User" u ON d.collector_id = u.id
         WHERE d.tenant_id = %s
@@ -198,10 +223,27 @@ def list_donations(user):
     
     params = [user['tenant_id']]
     
+    # Payment method filter
     if method:
         query += " AND d.payment_mode = %s"
         params.append(method)
     
+    # Payment status filter (PAID, PENDING, CANCELLED)
+    if payment_status:
+        query += " AND d.payment_status = %s"
+        params.append(payment_status)
+    
+    # Year filter
+    if year:
+        query += " AND d.donation_year = %s"
+        params.append(int(year))
+    
+    # Collector filter (for admin to see specific collector's donations)
+    if collector_id and (user['role'] == 'ADMIN' or user['role'] == 'SUPER_ADMIN'):
+        query += " AND d.collector_id = %s"
+        params.append(int(collector_id))
+    
+    # Date range filters
     if start_date:
         query += " AND d.created_at >= %s"
         params.append(start_date)
@@ -210,6 +252,16 @@ def list_donations(user):
         query += " AND d.created_at <= %s::date + interval '1 day'"
         params.append(end_date)
     
+    # Amount range filters
+    if min_amount:
+        query += " AND d.amount >= %s"
+        params.append(float(min_amount))
+    
+    if max_amount:
+        query += " AND d.amount <= %s"
+        params.append(float(max_amount))
+    
+    # Text search across name, phone, receipt number
     if search:
         query += """ AND (
             d.donor_name ILIKE %s OR 
@@ -219,10 +271,28 @@ def list_donations(user):
         search_pattern = f'%{search}%'
         params.extend([search_pattern, search_pattern, search_pattern])
     
+    # Get total count for pagination
+    count_query = query.replace(
+        """SELECT 
+            d.id, d.donor_name, d.donor_phone, d.donor_address, d.donor_pan,
+            d.amount, d.payment_mode as method, d.receipt_number, d.notes, 
+            d.created_at, d.payment_status, d.donation_year,
+            d.category, d.payment_date, d.collector_notes,
+            u.name as collector_name, u.id as collector_id
+        FROM Donation d
+        LEFT JOIN "User" u ON d.collector_id = u.id""",
+        "SELECT COUNT(*) as total FROM Donation d LEFT JOIN \"User\" u ON d.collector_id = u.id"
+    )
+    
     query += " ORDER BY d.created_at DESC LIMIT %s OFFSET %s"
     params.extend([limit, offset])
     
     with get_db_cursor() as cursor:
+        # Get total count
+        cursor.execute(count_query, params[:-2])  # Exclude limit and offset
+        total_count = cursor.fetchone()['total']
+        
+        # Get donations
         cursor.execute(query, params)
         donations = cursor.fetchall()
         
@@ -232,9 +302,16 @@ def list_donations(user):
             donation_dict = dict(d)
             if donation_dict['created_at']:
                 donation_dict['created_at'] = donation_dict['created_at'].isoformat()
+            if donation_dict.get('payment_date'):
+                donation_dict['payment_date'] = donation_dict['payment_date'].isoformat()
             result.append(donation_dict)
         
-        return jsonify(result)
+        return jsonify({
+            'donations': result,
+            'total': total_count,
+            'limit': limit,
+            'offset': offset
+        })
 
 
 @bp.route("/stats", methods=["GET"])
@@ -293,7 +370,7 @@ def export_donations_csv(user):
     query = """
         SELECT 
             d.created_at, d.receipt_number, d.payment_mode, d.amount, 
-            d.donor_name, d.donor_phone, d.notes,
+            d.donor_name, d.donor_phone, d.notes, d.payment_status,
             u.name as collector_name
         FROM Donation d
         LEFT JOIN "User" u ON d.collector_id = u.id
@@ -340,7 +417,7 @@ def export_donations_csv(user):
                 d['donor_name'] or '',
                 d['donor_phone'] or '',
                 d['collector_name'] or '',
-                d.get('payment_status', '') or '',
+                d['payment_status'] or '',
                 d['notes'] or ''
             ])
         
