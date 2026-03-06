@@ -248,6 +248,12 @@ BEGIN
                    WHERE table_name='tenant' AND column_name='religion') THEN
         ALTER TABLE Tenant ADD COLUMN religion VARCHAR(50) DEFAULT 'Hindu';
     END IF;
+    
+    -- Add status to Tenant if not exists
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='tenant' AND column_name='status') THEN
+        ALTER TABLE Tenant ADD COLUMN status VARCHAR(20) DEFAULT 'ACTIVE';
+    END IF;
 END $$;
 
 -- PHASE 2: Update existing donations to have year from created_at
