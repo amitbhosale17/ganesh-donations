@@ -174,32 +174,6 @@ CREATE TABLE IF NOT EXISTS Subscriptions (
     UNIQUE(tenant_id, subscription_year)
 );
 
--- Create current year subscription for all active tenants
-INSERT INTO Subscriptions (tenant_id, subscription_year, start_date, end_date, amount, payment_status)
-SELECT 
-    id,
-    EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER,
-    DATE_TRUNC('year', CURRENT_DATE)::DATE,
-    (DATE_TRUNC('year', CURRENT_DATE) + INTERVAL '1 year' - INTERVAL '1 day')::DATE,
-    0,
-    'PAID'
-FROM Tenant
-WHERE status = 'ACTIVE' AND id > 0
-ON CONFLICT (tenant_id, subscription_year) DO NOTHING;
-
--- System tenant
-INSERT INTO Tenant (id, name, address, receipt_prefix) 
-VALUES (0, 'System', 'System', 'SYS')
-ON CONFLICT (id) DO NOTHING;
-
--- SuperAdmin user
-INSERT INTO "User" (tenant_id, name, email, role, password_hash, status)
-VALUES (0, 'Super Admin', 'superadmin@system.local', 'SUPERADMIN', 'Super@123', 'ACTIVE')
-ON CONFLICT (email) DO NOTHING;
-
--- Fix any existing users without tenant_id or with invalid tenant_id
-UPDATE "User" SET tenant_id = 0 WHERE tenant_id IS NULL OR tenant_id NOT IN (SELECT id FROM Tenant);
-
 -- ============================================
 -- ALTER TABLE: Add missing columns (safe for existing databases)
 -- ============================================
@@ -255,6 +229,32 @@ BEGIN
         ALTER TABLE Tenant ADD COLUMN status VARCHAR(20) DEFAULT 'ACTIVE';
     END IF;
 END $$;
+
+-- Create current year subscription for all active tenants
+INSERT INTO Subscriptions (tenant_id, subscription_year, start_date, end_date, amount, payment_status)
+SELECT 
+    id,
+    EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER,
+    DATE_TRUNC('year', CURRENT_DATE)::DATE,
+    (DATE_TRUNC('year', CURRENT_DATE) + INTERVAL '1 year' - INTERVAL '1 day')::DATE,
+    0,
+    'PAID'
+FROM Tenant
+WHERE status = 'ACTIVE' AND id > 0
+ON CONFLICT (tenant_id, subscription_year) DO NOTHING;
+
+-- System tenant
+INSERT INTO Tenant (id, name, address, receipt_prefix) 
+VALUES (0, 'System', 'System', 'SYS')
+ON CONFLICT (id) DO NOTHING;
+
+-- SuperAdmin user
+INSERT INTO "User" (tenant_id, name, email, role, password_hash, status)
+VALUES (0, 'Super Admin', 'superadmin@system.local', 'SUPERADMIN', 'Super@123', 'ACTIVE')
+ON CONFLICT (email) DO NOTHING;
+
+-- Fix any existing users without tenant_id or with invalid tenant_id
+UPDATE "User" SET tenant_id = 0 WHERE tenant_id IS NULL OR tenant_id NOT IN (SELECT id FROM Tenant);
 
 -- PHASE 2: Update existing donations to have year from created_at
 UPDATE Donation SET donation_year = EXTRACT(YEAR FROM created_at) 
