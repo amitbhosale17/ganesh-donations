@@ -213,7 +213,7 @@ def list_donations(user):
         SELECT 
             d.id, d.donor_name, d.donor_phone, d.donor_address, d.donor_pan,
             d.amount, d.payment_mode as method, d.receipt_number, d.notes, 
-            d.created_at, d.payment_status,
+            d.created_at, d.payment_status, d.donation_year,
             d.category, d.payment_date, d.collector_notes,
             u.name as collector_name, u.id as collector_id
         FROM Donation d
@@ -233,10 +233,10 @@ def list_donations(user):
         query += " AND d.payment_status = %s"
         params.append(payment_status)
     
-    # Year filter (disabled until migration_004 runs)
-    # if year:
-    #     query += " AND d.donation_year = %s"
-    #     params.append(int(year))
+    # Year filter (PHASE 2: Re-enabled after clean migration)
+    if year:
+        query += " AND d.donation_year = %s"
+        params.append(int(year))
     
     # Collector filter (for admin to see specific collector's donations)
     if collector_id and (user['role'] == 'ADMIN' or user['role'] == 'SUPER_ADMIN'):
