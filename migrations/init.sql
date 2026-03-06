@@ -1,8 +1,8 @@
 -- ============================================
--- GANESH DONATION MANAGEMENT - CLEAN SCHEMA
--- Phase 1 (Core) + Phase 2 (Year Tracking)
+-- GANESH DONATION MANAGEMENT - COMPLETE SCHEMA
+-- Phase 1 (Core) + Phase 2 (Year) + Phase 3 (Events) + Phase 4 (Subscriptions)
 -- ============================================
--- Version: 2.0
+-- Version: 3.0 - COMPLETE IMPLEMENTATION
 -- Date: 2026-03-06
 -- Safe to run multiple times (idempotent)
 -- ============================================
@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS Tenant (
     secretary_name VARCHAR(255),
     treasurer_name VARCHAR(255),
     registration_no VARCHAR(100),
+    religion VARCHAR(50) DEFAULT 'Hindu', -- PHASE 3: Mandal religion (Hindu/Muslim/Buddhist/etc)
     status VARCHAR(20) DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -43,7 +44,7 @@ CREATE TABLE IF NOT EXISTS "User" (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Donation table (with Phase 2: Year Tracking)
+-- Donation table (with Phase 2: Year + Phase 3: Event linking)
 CREATE TABLE IF NOT EXISTS Donation (
     id SERIAL PRIMARY KEY,
     tenant_id INTEGER NOT NULL REFERENCES Tenant(id),
@@ -71,6 +72,7 @@ CREATE TABLE IF NOT EXISTS Donation (
     collector_notes TEXT,
     notes TEXT,
     donation_year INTEGER DEFAULT EXTRACT(YEAR FROM CURRENT_DATE), -- PHASE 2: Year tracking
+    event_id INTEGER, -- PHASE 3: Link to specific event (nullable for general donations)
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -93,6 +95,109 @@ CREATE TABLE IF NOT EXISTS ReceiptSequence (
     last_no INTEGER NOT NULL DEFAULT 0,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- ============================================
+-- PHASE 3: MULTI-EVENT SUPPORT
+-- ============================================
+
+-- EventTypes table (Master list - Super Admin manages)
+CREATE TABLE IF NOT EXISTS EventTypes (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    name_hindi VARCHAR(255),
+    name_marathi VARCHAR(255),
+    religion VARCHAR(50) NOT NULL, -- Hindu, Muslim, Buddhist, Sikh, Christian, Jain, General
+    icon_url VARCHAR(500),
+    color VARCHAR(20) DEFAULT '#4169E1',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Insert default event types
+INSERT INTO EventTypes (name, name_hindi, name_marathi, religion, color) VALUES
+('Ganesh Chaturthi', 'गणेश चतुर्थी', 'गणेश चतुर्थी', 'Hindu', '#FF9933'),
+('Diwali', 'दिवाली', 'दिवाळी', 'Hindu', '#FFD700'),
+('Navratri', 'नवरात्री', 'नवरात्री', 'Hindu', '#FF69B4'),
+('Ram Navami', 'राम नवमी', 'राम नवमी', 'Hindu', '#FFA500'),
+('Shivaji Jayanti', 'शिवाजी जयंती', 'शिवाजी जयंती', 'Hindu', '#FF8C00'),
+('Holi', 'होली', 'होळी', 'Hindu', '#FF1493'),
+('Eid-ul-Fitr', 'ईद-उल-फितर', 'ईद-उल-फितर', 'Muslim', '#008000'),
+('Eid-ul-Adha', 'ईद-उल-अज़हा', 'ईद-उल-अजहा', 'Muslim', '#006400'),
+('Ramadan', 'रमजान', 'रमजान', 'Muslim', '#00A86B'),
+('Buddha Jayanti', 'बुद्ध जयंती', 'बुद्ध जयंती', 'Buddhist', '#0000FF'),
+('Ambedkar Jayanti', 'अम्बेडकर जयंती', 'आंबेडकर जयंती', 'Buddhist', '#0000CD'),
+('Guru Nanak Jayanti', 'गुरु नानक जयंती', 'गुरु नानक जयंती', 'Sikh', '#FF8C00'),
+('Baisakhi', 'बैसाखी', 'बैसाखी', 'Sikh', '#FFD700'),
+('Christmas', 'क्रिसमस', 'ख्रिसमस', 'Christian', '#DC143C'),
+('Easter', 'ईस्टर', 'इस्टर', 'Christian', '#FFA500'),
+('Mahavir Jayanti', 'महावीर जयंती', 'महावीर जयंती', 'Jain', '#FFD700'),
+('Paryushana', 'पर्युषण', 'पर्युषण', 'Jain', '#FF8C00'),
+('General Donation', 'सामान्य दान', 'सामान्य देणगी', 'General', '#4169E1')
+ON CONFLICT (name) DO NOTHING;
+
+-- OrganizationEvents table (Tenant-specific events)
+CREATE TABLE IF NOT EXISTS OrganizationEvents (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES Tenant(id) ON DELETE CASCADE,
+    event_type_id INTEGER NOT NULL REFERENCES EventTypes(id),
+    event_year INTEGER NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    target_amount DECIMAL(12,2) DEFAULT 0,
+    collected_amount DECIMAL(12,2) DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(tenant_id, event_type_id, event_year) -- One event type per year per tenant
+);
+
+-- Add foreign key for event_id in Donation table
+DO $$ 
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE constraint_name = 'donation_event_id_fkey'
+    ) THEN
+        ALTER TABLE Donation ADD CONSTRAINT donation_event_id_fkey 
+        FOREIGN KEY (event_id) REFERENCES OrganizationEvents(id) ON DELETE SET NULL;
+    END IF;
+END $$;
+
+-- ============================================
+-- PHASE 4: SUBSCRIPTION MANAGEMENT
+-- ============================================
+
+-- Subscriptions table (Yearly subscriptions for tenants)
+CREATE TABLE IF NOT EXISTS Subscriptions (
+    id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL REFERENCES Tenant(id) ON DELETE CASCADE,
+    subscription_year INTEGER NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    amount DECIMAL(10,2) NOT NULL DEFAULT 0,
+    payment_status VARCHAR(20) DEFAULT 'PAID', -- PAID, PENDING, EXPIRED
+    payment_date DATE,
+    payment_method VARCHAR(50),
+    transaction_id VARCHAR(100),
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(tenant_id, subscription_year)
+);
+
+-- Create current year subscription for all active tenants
+INSERT INTO Subscriptions (tenant_id, subscription_year, start_date, end_date, amount, payment_status)
+SELECT 
+    id,
+    EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER,
+    DATE_TRUNC('year', CURRENT_DATE)::DATE,
+    (DATE_TRUNC('year', CURRENT_DATE) + INTERVAL '1 year' - INTERVAL '1 day')::DATE,
+    0,
+    'PAID'
+FROM Tenant
+WHERE status = 'ACTIVE' AND id > 0
+ON CONFLICT (tenant_id, subscription_year) DO NOTHING;
 
 -- System tenant
 INSERT INTO Tenant (id, name, address, receipt_prefix) 
@@ -143,6 +248,18 @@ BEGIN
                    WHERE table_name='donation' AND column_name='donation_year') THEN
         ALTER TABLE Donation ADD COLUMN donation_year INTEGER DEFAULT EXTRACT(YEAR FROM CURRENT_DATE);
     END IF;
+    
+    -- PHASE 3: Add event_id if not exists
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='donation' AND column_name='event_id') THEN
+        ALTER TABLE Donation ADD COLUMN event_id INTEGER;
+    END IF;
+    
+    -- PHASE 3: Add religion to Tenant if not exists
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                   WHERE table_name='tenant' AND column_name='religion') THEN
+        ALTER TABLE Tenant ADD COLUMN religion VARCHAR(50) DEFAULT 'Hindu';
+    END IF;
 END $$;
 
 -- PHASE 2: Update existing donations to have year from created_at
@@ -162,6 +279,18 @@ CREATE INDEX IF NOT EXISTS idx_category_tenant ON DonationCategory(tenant_id);
 -- PHASE 2: Year tracking indexes
 CREATE INDEX IF NOT EXISTS idx_donation_year ON Donation(donation_year);
 CREATE INDEX IF NOT EXISTS idx_donation_tenant_year ON Donation(tenant_id, donation_year);
+
+-- PHASE 3: Event tracking indexes
+CREATE INDEX IF NOT EXISTS idx_donation_event ON Donation(event_id) WHERE event_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_org_events_tenant ON OrganizationEvents(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_org_events_tenant_year ON OrganizationEvents(tenant_id, event_year);
+CREATE INDEX IF NOT EXISTS idx_event_types_religion ON EventTypes(religion) WHERE is_active = TRUE;
+
+-- PHASE 4: Subscription indexes
+CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant ON Subscriptions(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_year ON Subscriptions(subscription_year);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_tenant_year ON Subscriptions(tenant_id, subscription_year);
+CREATE INDEX IF NOT EXISTS idx_subscriptions_status ON Subscriptions(payment_status);
 
 -- Performance indexes for donor search and reports (10x faster queries)
 CREATE INDEX IF NOT EXISTS idx_donation_donor_phone ON Donation(donor_phone) WHERE donor_phone IS NOT NULL;
@@ -193,6 +322,32 @@ WHERE donation_year IS NOT NULL
 GROUP BY tenant_id, donation_year;
 
 -- ============================================
+-- PHASE 3: Event Statistics View
+-- ============================================
+
+-- View for event-wise donation statistics
+CREATE OR REPLACE VIEW v_event_donation_stats AS
+SELECT 
+    oe.tenant_id,
+    oe.id as event_id,
+    oe.event_year,
+    et.name as event_name,
+    et.name_hindi,
+    et.name_marathi,
+    et.religion,
+    COUNT(d.id) as total_donations,
+    COALESCE(SUM(d.amount), 0) as collected_amount,
+    oe.target_amount,
+    oe.start_date,
+    oe.end_date,
+    oe.is_active
+FROM OrganizationEvents oe
+JOIN EventTypes et ON oe.event_type_id = et.id
+LEFT JOIN Donation d ON d.event_id = oe.id AND d.payment_status IN ('PAID', 'COMPLETED')
+GROUP BY oe.tenant_id, oe.id, oe.event_year, et.name, et.name_hindi, et.name_marathi, 
+         et.religion, oe.target_amount, oe.start_date, oe.end_date, oe.is_active;
+
+-- ============================================
 -- Migration Complete
 -- ============================================
 
@@ -202,5 +357,7 @@ BEGIN
     RAISE NOTICE 'Database schema initialized successfully!';
     RAISE NOTICE 'Phase 1: Core donation management ✓';
     RAISE NOTICE 'Phase 2: Year tracking ✓';
+    RAISE NOTICE 'Phase 3: Multi-event support ✓';
+    RAISE NOTICE 'Phase 4: Subscription management ✓';
     RAISE NOTICE '========================================';
 END $$;

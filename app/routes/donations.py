@@ -26,6 +26,7 @@ def create_donation(user):
     additional_notes = data.get('additional_notes')
     payment_status = data.get('payment_status', 'PAID')  # PAID or PENDING
     collector_notes = data.get('collector_notes')
+    event_id = data.get('event_id')  # PHASE 3: Link donation to event (optional)
     
     if not amount or not method:
         return jsonify({"detail": "Missing required fields"}), 400
@@ -55,8 +56,8 @@ def create_donation(user):
         cursor.execute("""
             INSERT INTO Donation 
             (tenant_id, collector_id, donor_name, donor_phone, amount, payment_mode, receipt_number, notes, 
-             category, is_recurring_donor, additional_notes, payment_status, payment_date, collector_notes)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+             category, is_recurring_donor, additional_notes, payment_status, payment_date, collector_notes, event_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id, receipt_number, created_at, payment_status
         """, (
             user['tenant_id'],
@@ -72,7 +73,8 @@ def create_donation(user):
             additional_notes,
             payment_status,
             datetime.now() if payment_status == 'PAID' else None,
-            collector_notes
+            collector_notes,
+            event_id  # PHASE 3: Optional event link
         ))
         
         result = cursor.fetchone()
@@ -187,6 +189,7 @@ def list_donations(user):
     search = request.args.get('search')
     payment_status = request.args.get('payment_status')  # NEW: Filter by status
     year = request.args.get('year')  # NEW: Filter by year
+    event_id = request.args.get('event_id')  # PHASE 3: Filter by event
     collector_id = request.args.get('collector_id')  # NEW: Filter by collector
     min_amount = request.args.get('min_amount')  # NEW: Min amount filter
     max_amount = request.args.get('max_amount')  # NEW: Max amount filter
@@ -213,7 +216,7 @@ def list_donations(user):
         SELECT 
             d.id, d.donor_name, d.donor_phone, d.donor_address, d.donor_pan,
             d.amount, d.payment_mode as method, d.receipt_number, d.notes, 
-            d.created_at, d.payment_status, d.donation_year,
+            d.created_at, d.payment_status, d.donation_year, d.event_id,
             d.category, d.payment_date, d.collector_notes,
             u.name as collector_name, u.id as collector_id
         FROM Donation d
@@ -237,6 +240,11 @@ def list_donations(user):
     if year:
         query += " AND d.donation_year = %s"
         params.append(int(year))
+    
+    # Event filter (PHASE 3: Filter donations by specific event)
+    if event_id:
+        query += " AND d.event_id = %s"
+        params.append(int(event_id))
     
     # Collector filter (for admin to see specific collector's donations)
     if collector_id and (user['role'] == 'ADMIN' or user['role'] == 'SUPER_ADMIN'):
