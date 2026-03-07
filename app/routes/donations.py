@@ -280,24 +280,17 @@ def list_donations(user):
         params.extend([search_pattern, search_pattern, search_pattern])
     
     # Get total count for pagination
-    count_query = query.replace(
-        """SELECT 
-            d.id, d.donor_name, d.donor_phone, d.donor_address, d.donor_pan,
-            d.amount, d.payment_mode as method, d.receipt_number, d.notes, 
-            d.created_at, d.payment_status,
-            d.category, d.payment_date, d.collector_notes,
-            u.name as collector_name, u.id as collector_id
-        FROM Donation d
-        LEFT JOIN "User" u ON d.collector_id = u.id""",
-        "SELECT COUNT(*) as total FROM Donation d LEFT JOIN \"User\" u ON d.collector_id = u.id"
-    )
+    # Use subquery wrapper instead of fragile string-replace
+    # (string-replace was silently failing due to column list mismatch → KeyError → 500)
+    count_query = f"SELECT COUNT(*) as total FROM ({query}) AS counted"
+    count_params = list(params)  # snapshot before adding LIMIT/OFFSET
     
     query += " ORDER BY d.created_at DESC LIMIT %s OFFSET %s"
     params.extend([limit, offset])
     
     with get_db_cursor() as cursor:
         # Get total count
-        cursor.execute(count_query, params[:-2])  # Exclude limit and offset
+        cursor.execute(count_query, count_params)
         total_count = cursor.fetchone()['total']
         
         # Get donations
