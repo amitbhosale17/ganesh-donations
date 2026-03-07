@@ -48,7 +48,7 @@ from app.config import settings
 # Import database connection pool management
 from app.database import init_db_pool, close_db_pool
 # Import all route blueprints (modular API endpoints)
-from app.routes import auth, tenant, donations, superadmin, stats, users, reports, categories, donors, subscriptions, events
+from app.routes import auth, tenant, donations, superadmin, stats, users, reports, categories, donors, subscriptions
 
 # ============================================
 # LOGGING CONFIGURATION
@@ -336,9 +336,6 @@ app.register_blueprint(donors.donors_bp)
 
 # Subscriptions: Multi-year subscription management
 app.register_blueprint(subscriptions.bp)
-
-# Events: Event types and organization events
-app.register_blueprint(events.bp)
 
 # ============================================
 # CORS HEADERS MIDDLEWARE

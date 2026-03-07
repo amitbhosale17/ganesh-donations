@@ -40,15 +40,22 @@ def update_tenant(user):
         values = []
         
         allowed_fields = [
-            'name', 'address', 'contact_phone', 'receipt_prefix', 'footer_lines', 
-            'locale_default', 'president_name', 'vice_president_name', 'secretary_name', 
-            'treasurer_name', 'registration_no', 'footer_text'
+            'name', 'address', 'contact_phone', 'contact_email', 'receipt_prefix', 
+            'footer_lines', 'locale_default', 'president_name', 'vice_president_name', 
+            'secretary_name', 'treasurer_name', 'registration_no', 'footer_text',
+            'header_text', 'pan_number', 'office_bearers'
         ]
         
         for field in allowed_fields:
             if field in data and data[field] is not None:
-                update_fields.append(f"{field} = %s")
-                values.append(data[field])
+                # Handle JSONB field
+                if field == 'office_bearers':
+                    import json
+                    update_fields.append(f"{field} = %s::jsonb")
+                    values.append(json.dumps(data[field]))
+                else:
+                    update_fields.append(f"{field} = %s")
+                    values.append(data[field])
         
         if not update_fields:
             return jsonify({"detail": "No fields to update"}), 400
@@ -325,6 +332,84 @@ def upload_upi_qr(user):
         
     except Exception as e:
         logger.error(f"Unexpected error in upload_upi_qr: tenant_id={user.get('tenant_id')}", exc_info=True)
+        return jsonify({"detail": f"Unexpected error: {str(e)}"}), 500
+
+
+@bp.route("/tenant/upload/qr_code", methods=["POST"])
+@require_admin
+def upload_qr_code(user):
+    """
+    Upload generic QR code (Admin only)
+    For tenant customization - any QR code they want to display
+    """
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    try:
+        logger.info(f"QR code upload request from tenant_id={user['tenant_id']}")
+        
+        if 'file' not in request.files:
+            return jsonify({"detail": "No file provided"}), 400
+        
+        file = request.files['file']
+        
+        if file.filename == '':
+            return jsonify({"detail": "No file selected"}), 400
+        
+        if not file.content_type or not file.content_type.startswith('image/'):
+            return jsonify({"detail": f"Only image files are allowed"}), 400
+        
+        # Check file size
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+        
+        max_size = 5 * 1024 * 1024  # 5MB
+        if file_size > max_size:
+            return jsonify({"detail": f"File too large. Maximum size is 5MB"}), 400
+        
+        if file_size < 100:
+            return jsonify({"detail": "File appears to be empty or corrupt"}), 400
+        
+        upload_dir = Path(settings.UPLOAD_DIR).resolve()
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        
+        ext = os.path.splitext(file.filename)[1].lower()
+        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']
+        if ext not in allowed_extensions:
+            return jsonify({"detail": f"Unsupported file extension"}), 400
+        
+        filename = f"qr_code_{user['tenant_id']}_{uuid.uuid4()}{ext}"
+        filepath = upload_dir / filename
+        
+        file.save(str(filepath))
+        logger.info(f"✅ QR code saved: {filepath}")
+        
+        url = f"{settings.BASE_PUBLIC_URL}/uploads/{filename}"
+        
+        # Update database
+        with get_db_cursor(commit=True) as cursor:
+            cursor.execute(
+                "UPDATE Tenant SET qr_code_url = %s, updated_at = now() WHERE id = %s RETURNING id, qr_code_url",
+                (url, user['tenant_id'])
+            )
+            result = cursor.fetchone()
+            
+            if not result:
+                filepath.unlink(missing_ok=True)
+                return jsonify({"detail": "Tenant not found"}), 404
+            
+            logger.info(f"✅ QR code URL updated: tenant_id={user['tenant_id']}")
+        
+        return jsonify({
+            "url": url,
+            "filename": filename,
+            "size": file_size,
+            "message": "QR code uploaded successfully"
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error in upload_qr_code: {str(e)}", exc_info=True)
         return jsonify({"detail": f"Unexpected error: {str(e)}"}), 500
 
 

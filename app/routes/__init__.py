@@ -14,8 +14,7 @@ from . import (
     reports,
     categories,
     donors,
-    subscriptions,
-    events
+    subscriptions
 )
 
 __all__ = [
@@ -28,6 +27,5 @@ __all__ = [
     'reports',
     'categories',
     'donors',
-    'subscriptions',
-    'events'
+    'subscriptions'
 ]
