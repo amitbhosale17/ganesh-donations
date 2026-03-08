@@ -12,16 +12,18 @@ def get_all_tenants(user):
     try:
         with get_db_cursor() as cursor:
             cursor.execute("""
-                SELECT 
+                SELECT
                     t.*,
-                    COUNT(DISTINCT u.id) as user_count,
-                    COUNT(DISTINCT d.id) as donation_count,
-                    COALESCE(SUM(d.amount), 0) as total_amount
+                    (SELECT COUNT(*) FROM "User" u WHERE u.tenant_id = t.id) AS user_count,
+                    (SELECT COUNT(*) FROM Donation d WHERE d.tenant_id = t.id
+                        AND d.payment_status != 'CANCELLED') AS donation_count,
+                    COALESCE(
+                        (SELECT SUM(d.amount) FROM Donation d
+                         WHERE d.tenant_id = t.id
+                           AND d.payment_status != 'CANCELLED'), 0
+                    ) AS total_amount
                 FROM Tenant t
-                LEFT JOIN "User" u ON u.tenant_id = t.id
-                LEFT JOIN Donation d ON d.tenant_id = t.id
                 WHERE t.id > 0
-                GROUP BY t.id
                 ORDER BY t.created_at DESC
             """)
             
@@ -234,15 +236,17 @@ def get_stats(user):
     """Get overall system statistics"""
     try:
         with get_db_cursor() as cursor:
+            # Use separate subqueries to avoid JOIN fan-out that inflates SUM
             cursor.execute("""
-                SELECT 
-                    COUNT(DISTINCT CASE WHEN t.id > 0 THEN t.id END) as total_tenants,
-                    COUNT(DISTINCT u.id) as total_users,
-                    COUNT(DISTINCT d.id) as total_donations,
-                    COALESCE(SUM(d.amount), 0) as total_amount
-                FROM Tenant t
-                LEFT JOIN "User" u ON u.tenant_id = t.id AND u.role != 'SUPERADMIN'
-                LEFT JOIN Donation d ON d.tenant_id = t.id
+                SELECT
+                    (SELECT COUNT(*) FROM Tenant WHERE id > 0) AS total_tenants,
+                    (SELECT COUNT(*) FROM "User" WHERE role != 'SUPERADMIN') AS total_users,
+                    (SELECT COUNT(*) FROM Donation
+                        WHERE payment_status != 'CANCELLED') AS total_donations,
+                    COALESCE(
+                        (SELECT SUM(amount) FROM Donation
+                         WHERE payment_status != 'CANCELLED'), 0
+                    ) AS total_amount
             """)
             
             stats = cursor.fetchone()
