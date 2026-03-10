@@ -126,10 +126,11 @@ def update_tenant(user):
         values = []
         
         allowed_fields = [
-            'name', 'address', 'contact_phone', 'contact_email', 'receipt_prefix', 
-            'footer_lines', 'locale_default', 'president_name', 'vice_president_name', 
+            'name', 'address', 'contact_phone', 'contact_email', 'receipt_prefix',
+            'footer_lines', 'locale_default', 'president_name', 'vice_president_name',
             'secretary_name', 'treasurer_name', 'registration_no', 'footer_text',
-            'header_text', 'pan_number', 'office_bearers'
+            'header_text', 'pan_number', 'office_bearers',
+            'footer_left_image_name', 'footer_right_image_name',
         ]
         
         for field in allowed_fields:
@@ -293,6 +294,96 @@ def upload_qr_code(user):
 
     except Exception as e:
         logger.error(f"upload_qr_code error: tenant_id={user.get('tenant_id')}: {e}", exc_info=True)
+        return jsonify({"detail": f"Upload failed: {str(e)}"}), 500
+
+
+@bp.route("/tenant/upload/footer_left", methods=["POST"])
+@require_admin
+def upload_footer_left(user):
+    """Upload left footer portrait (politician/reputed person). Stores to Cloudinary or local disk."""
+    try:
+        logger.info(f"Footer-left upload: tenant_id={user['tenant_id']}")
+
+        if 'file' not in request.files:
+            return jsonify({"detail": "No file provided"}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"detail": "No file selected"}), 400
+        if not file.content_type or not file.content_type.startswith('image/'):
+            return jsonify({"detail": f"Only image files allowed. Got: {file.content_type}"}), 400
+
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+        if file_size > 5 * 1024 * 1024:
+            return jsonify({"detail": "File too large. Maximum 5 MB."}), 400
+        if file_size < 100:
+            return jsonify({"detail": "File appears empty or corrupt."}), 400
+
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in ('.jpg', '.jpeg', '.png', '.gif', '.webp'):
+            return jsonify({"detail": f"Unsupported extension '{ext}'."}), 400
+
+        url = _save_upload(file, tag="footer_left", tenant_id=user['tenant_id'])
+
+        with get_db_cursor(commit=True) as cursor:
+            cursor.execute(
+                "UPDATE Tenant SET footer_left_image_url = %s, updated_at = now() WHERE id = %s RETURNING id",
+                (url, user['tenant_id'])
+            )
+            if not cursor.fetchone():
+                return jsonify({"detail": "Tenant not found"}), 404
+
+        logger.info(f"\u2705 Footer-left updated: tenant_id={user['tenant_id']}, url={url}")
+        return jsonify({"url": url, "message": "Footer left image uploaded successfully"}), 200
+
+    except Exception as e:
+        logger.error(f"upload_footer_left error: tenant_id={user.get('tenant_id')}: {e}", exc_info=True)
+        return jsonify({"detail": f"Upload failed: {str(e)}"}), 500
+
+
+@bp.route("/tenant/upload/footer_right", methods=["POST"])
+@require_admin
+def upload_footer_right(user):
+    """Upload right footer portrait (president / mandal head). Stores to Cloudinary or local disk."""
+    try:
+        logger.info(f"Footer-right upload: tenant_id={user['tenant_id']}")
+
+        if 'file' not in request.files:
+            return jsonify({"detail": "No file provided"}), 400
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({"detail": "No file selected"}), 400
+        if not file.content_type or not file.content_type.startswith('image/'):
+            return jsonify({"detail": f"Only image files allowed. Got: {file.content_type}"}), 400
+
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+        if file_size > 5 * 1024 * 1024:
+            return jsonify({"detail": "File too large. Maximum 5 MB."}), 400
+        if file_size < 100:
+            return jsonify({"detail": "File appears empty or corrupt."}), 400
+
+        ext = os.path.splitext(file.filename)[1].lower()
+        if ext not in ('.jpg', '.jpeg', '.png', '.gif', '.webp'):
+            return jsonify({"detail": f"Unsupported extension '{ext}'."}), 400
+
+        url = _save_upload(file, tag="footer_right", tenant_id=user['tenant_id'])
+
+        with get_db_cursor(commit=True) as cursor:
+            cursor.execute(
+                "UPDATE Tenant SET footer_right_image_url = %s, updated_at = now() WHERE id = %s RETURNING id",
+                (url, user['tenant_id'])
+            )
+            if not cursor.fetchone():
+                return jsonify({"detail": "Tenant not found"}), 404
+
+        logger.info(f"\u2705 Footer-right updated: tenant_id={user['tenant_id']}, url={url}")
+        return jsonify({"url": url, "message": "Footer right image uploaded successfully"}), 200
+
+    except Exception as e:
+        logger.error(f"upload_footer_right error: tenant_id={user.get('tenant_id')}: {e}", exc_info=True)
         return jsonify({"detail": f"Upload failed: {str(e)}"}), 500
 
 
