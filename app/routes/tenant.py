@@ -388,6 +388,58 @@ def upload_footer_right(user):
         return jsonify({"detail": f"Upload failed: {str(e)}"}), 500
 
 
+@bp.route("/tenant/upload/footer_left", methods=["DELETE"])
+@require_admin
+def remove_footer_left(user):
+    """Clear the left footer portrait — sets URL, name and designation to NULL."""
+    try:
+        with get_db_cursor(commit=True) as cursor:
+            cursor.execute(
+                """
+                UPDATE Tenant
+                SET footer_left_image_url         = NULL,
+                    footer_left_image_name        = NULL,
+                    footer_left_image_designation = NULL,
+                    updated_at = now()
+                WHERE id = %s RETURNING id
+                """,
+                (user['tenant_id'],)
+            )
+            if not cursor.fetchone():
+                return jsonify({"detail": "Tenant not found"}), 404
+        logger.info(f"\u2705 Footer-left removed: tenant_id={user['tenant_id']}")
+        return jsonify({"message": "Footer left image removed"}), 200
+    except Exception as e:
+        logger.error(f"remove_footer_left error: {e}", exc_info=True)
+        return jsonify({"detail": str(e)}), 500
+
+
+@bp.route("/tenant/upload/footer_right", methods=["DELETE"])
+@require_admin
+def remove_footer_right(user):
+    """Clear the right footer portrait — sets URL, name and designation to NULL."""
+    try:
+        with get_db_cursor(commit=True) as cursor:
+            cursor.execute(
+                """
+                UPDATE Tenant
+                SET footer_right_image_url         = NULL,
+                    footer_right_image_name        = NULL,
+                    footer_right_image_designation = NULL,
+                    updated_at = now()
+                WHERE id = %s RETURNING id
+                """,
+                (user['tenant_id'],)
+            )
+            if not cursor.fetchone():
+                return jsonify({"detail": "Tenant not found"}), 404
+        logger.info(f"\u2705 Footer-right removed: tenant_id={user['tenant_id']}")
+        return jsonify({"message": "Footer right image removed"}), 200
+    except Exception as e:
+        logger.error(f"remove_footer_right error: {e}", exc_info=True)
+        return jsonify({"detail": str(e)}), 500
+
+
 @bp.route("/users", methods=["GET"])
 @require_admin
 def list_users(user):
