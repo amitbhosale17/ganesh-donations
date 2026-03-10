@@ -132,6 +132,7 @@ def update_tenant(user):
             'header_text', 'pan_number', 'office_bearers',
             'footer_left_image_name', 'footer_right_image_name',
             'footer_left_image_designation', 'footer_right_image_designation',
+            'footer_left_image_enabled', 'footer_right_image_enabled',
         ]
         
         for field in allowed_fields:
