@@ -158,6 +158,24 @@ class Settings:
     # Example: If BASE_PUBLIC_URL = "https://api.example.com" and file is "logo.png"
     # The full URL returned will be: "https://api.example.com/uploads/logo.png"
     BASE_PUBLIC_URL = os.getenv("BASE_PUBLIC_URL", "https://ganesh-donations-api.onrender.com")
+
+    # ============================================
+    # CLOUDINARY CONFIGURATION (Persistent File Storage)
+    # ============================================
+    # Render's free tier uses an ephemeral filesystem — files saved to disk are
+    # deleted on every server restart/redeploy.  Cloudinary provides a free CDN
+    # with permanent URLs so logos and QR codes never disappear.
+    #
+    # Set these env vars in Render dashboard (or .env locally):
+    #   CLOUDINARY_CLOUD_NAME  — from your Cloudinary dashboard
+    #   CLOUDINARY_API_KEY     — from your Cloudinary dashboard
+    #   CLOUDINARY_API_SECRET  — from your Cloudinary dashboard
+    #
+    # If all three are set, uploads go to Cloudinary.
+    # If they are empty, the server falls back to local disk (dev mode).
+    CLOUDINARY_CLOUD_NAME = os.getenv("CLOUDINARY_CLOUD_NAME", "")
+    CLOUDINARY_API_KEY    = os.getenv("CLOUDINARY_API_KEY", "")
+    CLOUDINARY_API_SECRET = os.getenv("CLOUDINARY_API_SECRET", "")
     
     @property
     def cors_origins_list(self):

@@ -1,12 +1,98 @@
 from flask import Blueprint, request, jsonify
 import os
 import uuid
+import logging
 from pathlib import Path
 from app.database import get_db_cursor
 from app.middleware.auth import require_auth, require_admin
 from app.config import settings
 
 bp = Blueprint('tenant', __name__)
+logger = logging.getLogger(__name__)
+
+# ──────────────────────────────────────────────────────────────────────────────
+# PERSISTENT UPLOAD HELPER
+# ──────────────────────────────────────────────────────────────────────────────
+# Render's free tier wipes the local disk on every restart/redeploy.
+# This helper uploads to Cloudinary when credentials are configured, and falls
+# back to local disk otherwise (useful for local development).
+#
+# Configure Render env vars:
+#   CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _upload_to_cloudinary(file_stream, public_id: str, folder: str) -> str:
+    """
+    Upload a file stream to Cloudinary and return the permanent secure URL.
+    Raises RuntimeError if upload fails.
+    """
+    import cloudinary
+    import cloudinary.uploader
+
+    cloudinary.config(
+        cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+        api_key=settings.CLOUDINARY_API_KEY,
+        api_secret=settings.CLOUDINARY_API_SECRET,
+        secure=True,
+    )
+
+    result = cloudinary.uploader.upload(
+        file_stream,
+        public_id=public_id,
+        folder=folder,
+        overwrite=True,           # replace if same public_id (re-upload same tenant)
+        resource_type="image",
+        invalidate=True,          # bust CDN cache on overwrite
+    )
+    url = result.get("secure_url")
+    if not url:
+        raise RuntimeError(f"Cloudinary returned no URL: {result}")
+    logger.info(f"☁️  Cloudinary upload OK: {url}")
+    return url
+
+
+def _save_upload(file, tag: str, tenant_id: int) -> str:
+    """
+    Persist *file* (werkzeug FileStorage) and return a public URL.
+
+    Strategy:
+      1. If Cloudinary env vars are set  → upload to Cloudinary (permanent CDN)
+      2. Otherwise                        → save to local ./uploads/ dir
+
+    Args:
+        file      – werkzeug FileStorage object (already validated, seeked to 0)
+        tag       – short label used in filenames / Cloudinary public_id
+                    e.g. "logo" or "upi_qr"
+        tenant_id – owning tenant's id (used to namespace the file)
+
+    Returns:
+        Public URL string
+    """
+    use_cloudinary = bool(
+        settings.CLOUDINARY_CLOUD_NAME
+        and settings.CLOUDINARY_API_KEY
+        and settings.CLOUDINARY_API_SECRET
+    )
+
+    ext = os.path.splitext(file.filename)[1].lower() if file.filename else ".png"
+
+    if use_cloudinary:
+        # Use a deterministic public_id so re-uploading the logo always
+        # overwrites the same Cloudinary asset (no orphaned old files).
+        public_id = f"{tag}_{tenant_id}"
+        file.seek(0)
+        url = _upload_to_cloudinary(file.stream, public_id=public_id, folder="ganesh_donations")
+        return url
+    else:
+        # Local disk fallback (dev / self-hosted)
+        upload_dir = Path(settings.UPLOAD_DIR).resolve()
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        filename = f"{tag}_{tenant_id}_{uuid.uuid4()}{ext}"
+        filepath = upload_dir / filename
+        file.seek(0)
+        file.save(str(filepath))
+        logger.info(f"💾 Local save: {filepath}")
+        return f"{settings.BASE_PUBLIC_URL}/uploads/{filename}"
 
 
 @bp.route("/tenant/self", methods=["GET"])
@@ -78,339 +164,136 @@ def update_tenant(user):
 @bp.route("/tenant/upload/logo", methods=["POST"])
 @require_admin
 def upload_logo(user):
-    """
-    Upload tenant logo (Admin only)
-    
-    Edge Cases Handled:
-    - Missing file in request
-    - Empty filename
-    - Invalid file type (non-image)
-    - File size too large
-    - Disk write errors
-    - Permission issues
-    - Invalid tenant_id
-    """
-    import logging
-    logger = logging.getLogger(__name__)
-    
+    """Upload tenant logo (Admin only). Stores to Cloudinary (persistent) or local disk."""
     try:
-        # Log request details for debugging
-        logger.info(f"Logo upload request from tenant_id={user['tenant_id']}, user_id={user['id']}")
-        
-        # Edge Case 1: Check if file is in request
+        logger.info(f"Logo upload: tenant_id={user['tenant_id']}")
+
         if 'file' not in request.files:
-            logger.warning(f"Logo upload failed: No file in request (tenant_id={user['tenant_id']})")
             return jsonify({"detail": "No file provided"}), 400
-        
         file = request.files['file']
-        
-        # Edge Case 2: Check if filename is empty
         if file.filename == '':
-            logger.warning(f"Logo upload failed: Empty filename (tenant_id={user['tenant_id']})")
             return jsonify({"detail": "No file selected"}), 400
-        
-        # Edge Case 3: Validate file type
         if not file.content_type or not file.content_type.startswith('image/'):
-            logger.warning(f"Logo upload failed: Invalid file type '{file.content_type}' (tenant_id={user['tenant_id']})")
-            return jsonify({"detail": f"Only image files are allowed. Got: {file.content_type}"}), 400
-        
-        # Edge Case 4: Check file size (5MB limit)
-        file.seek(0, 2)  # Seek to end
-        file_size = file.tell()  # Get position (file size)
-        file.seek(0)  # Reset to beginning
-        
-        max_size = 5 * 1024 * 1024  # 5MB
-        if file_size > max_size:
-            logger.warning(f"Logo upload failed: File too large {file_size} bytes (tenant_id={user['tenant_id']})")
-            return jsonify({"detail": f"File too large. Maximum size is 5MB. Your file: {file_size / 1024 / 1024:.2f}MB"}), 400
-        
-        logger.info(f"Logo file validation passed: {file.filename}, size={file_size} bytes, type={file.content_type}")
-        
-        # Create uploads directory with proper permissions
-        upload_dir = Path(settings.UPLOAD_DIR).resolve()
-        
-        try:
-            upload_dir.mkdir(parents=True, exist_ok=True)
-            logger.info(f"Upload directory ready: {upload_dir}")
-        except PermissionError as e:
-            logger.error(f"Permission denied creating upload directory: {upload_dir}", exc_info=True)
-            return jsonify({"detail": "Server configuration error: Cannot create upload directory"}), 500
-        
-        # Generate unique filename to prevent collisions
+            return jsonify({"detail": f"Only image files allowed. Got: {file.content_type}"}), 400
+
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+        if file_size > 5 * 1024 * 1024:
+            return jsonify({"detail": "File too large. Maximum 5 MB."}), 400
+        if file_size < 100:
+            return jsonify({"detail": "File appears empty or corrupt."}), 400
+
         ext = os.path.splitext(file.filename)[1].lower()
-        # Sanitize extension
-        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']
-        if ext not in allowed_extensions:
-            logger.warning(f"Logo upload failed: Unsupported extension '{ext}' (tenant_id={user['tenant_id']})")
-            return jsonify({"detail": f"Unsupported file extension. Allowed: {', '.join(allowed_extensions)}"}), 400
-        
-        filename = f"logo_{user['tenant_id']}_{uuid.uuid4()}{ext}"
-        filepath = upload_dir / filename
-        
-        # Save file with error handling
-        try:
-            file.save(str(filepath))
-            logger.info(f"✅ Logo saved successfully: {filepath}")
-        except Exception as e:
-            logger.error(f"Failed to save logo file: {filepath}", exc_info=True)
-            return jsonify({"detail": f"Failed to save file: {str(e)}"}), 500
-        
-        # Verify file was actually saved
-        if not filepath.exists():
-            logger.error(f"Logo file not found after save: {filepath}")
-            return jsonify({"detail": "File save verification failed"}), 500
-        
-        # Generate public URL
-        # Edge Case: Handle both production and development URLs
-        url = f"{settings.BASE_PUBLIC_URL}/uploads/{filename}"
-        logger.info(f"Logo URL generated: {url}")
-        
-        # Update database
+        if ext not in ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'):
+            return jsonify({"detail": f"Unsupported extension '{ext}'."}), 400
+
+        url = _save_upload(file, tag="logo", tenant_id=user['tenant_id'])
+
         with get_db_cursor(commit=True) as cursor:
-            try:
-                cursor.execute(
-                    "UPDATE Tenant SET logo_url = %s, updated_at = now() WHERE id = %s RETURNING id, logo_url",
-                    (url, user['tenant_id'])
-                )
-                result = cursor.fetchone()
-                
-                if not result:
-                    logger.error(f"Tenant not found in database: tenant_id={user['tenant_id']}")
-                    # Clean up uploaded file
-                    filepath.unlink(missing_ok=True)
-                    return jsonify({"detail": "Tenant not found"}), 404
-                
-                logger.info(f"✅ Logo URL updated in database: tenant_id={user['tenant_id']}, url={url}")
-                
-            except Exception as e:
-                logger.error(f"Database update failed for logo: tenant_id={user['tenant_id']}", exc_info=True)
-                # Clean up uploaded file
-                filepath.unlink(missing_ok=True)
-                return jsonify({"detail": f"Database error: {str(e)}"}), 500
-        
-        return jsonify({
-            "url": url,
-            "filename": filename,
-            "size": file_size,
-            "message": "Logo uploaded successfully"
-        }), 200
-        
+            cursor.execute(
+                "UPDATE Tenant SET logo_url = %s, updated_at = now() WHERE id = %s RETURNING id",
+                (url, user['tenant_id'])
+            )
+            if not cursor.fetchone():
+                return jsonify({"detail": "Tenant not found"}), 404
+
+        logger.info(f"✅ Logo updated: tenant_id={user['tenant_id']}, url={url}")
+        return jsonify({"url": url, "message": "Logo uploaded successfully"}), 200
+
     except Exception as e:
-        logger.error(f"Unexpected error in upload_logo: tenant_id={user.get('tenant_id')}", exc_info=True)
-        return jsonify({"detail": f"Unexpected error: {str(e)}"}), 500
+        logger.error(f"upload_logo error: tenant_id={user.get('tenant_id')}: {e}", exc_info=True)
+        return jsonify({"detail": f"Upload failed: {str(e)}"}), 500
 
 
 @bp.route("/tenant/upload/upi_qr", methods=["POST"])
 @require_admin
 def upload_upi_qr(user):
-    """
-    Upload UPI QR code (Admin only)
-    
-    Edge Cases Handled:
-    - Missing file in request
-    - Empty filename
-    - Invalid file type (non-image)
-    - File size too large
-    - Disk write errors
-    - Permission issues
-    - Invalid tenant_id
-    - QR code validation (optional)
-    """
-    import logging
-    logger = logging.getLogger(__name__)
-    
+    """Upload UPI QR code (Admin only). Stores to Cloudinary (persistent) or local disk."""
     try:
-        # Log request details for debugging
-        logger.info(f"UPI QR upload request from tenant_id={user['tenant_id']}, user_id={user['id']}")
-        
-        # Edge Case 1: Check if file is in request
+        logger.info(f"UPI QR upload: tenant_id={user['tenant_id']}")
+
         if 'file' not in request.files:
-            logger.warning(f"UPI QR upload failed: No file in request (tenant_id={user['tenant_id']})")
             return jsonify({"detail": "No file provided"}), 400
-        
         file = request.files['file']
-        
-        # Edge Case 2: Check if filename is empty
         if file.filename == '':
-            logger.warning(f"UPI QR upload failed: Empty filename (tenant_id={user['tenant_id']})")
             return jsonify({"detail": "No file selected"}), 400
-        
-        # Edge Case 3: Validate file type
         if not file.content_type or not file.content_type.startswith('image/'):
-            logger.warning(f"UPI QR upload failed: Invalid file type '{file.content_type}' (tenant_id={user['tenant_id']})")
-            return jsonify({"detail": f"Only image files are allowed. Got: {file.content_type}"}), 400
-        
-        # Edge Case 4: Check file size (5MB limit)
-        file.seek(0, 2)  # Seek to end
-        file_size = file.tell()  # Get position (file size)
-        file.seek(0)  # Reset to beginning
-        
-        max_size = 5 * 1024 * 1024  # 5MB
-        if file_size > max_size:
-            logger.warning(f"UPI QR upload failed: File too large {file_size} bytes (tenant_id={user['tenant_id']})")
-            return jsonify({"detail": f"File too large. Maximum size is 5MB. Your file: {file_size / 1024 / 1024:.2f}MB"}), 400
-        
-        # Edge Case 5: Minimum file size (to prevent empty/corrupt files)
-        if file_size < 100:  # Less than 100 bytes is suspicious
-            logger.warning(f"UPI QR upload failed: File too small {file_size} bytes, possibly corrupt (tenant_id={user['tenant_id']})")
-            return jsonify({"detail": "File appears to be empty or corrupt"}), 400
-        
-        logger.info(f"UPI QR file validation passed: {file.filename}, size={file_size} bytes, type={file.content_type}")
-        
-        # Create uploads directory with proper permissions
-        upload_dir = Path(settings.UPLOAD_DIR).resolve()
-        
-        try:
-            upload_dir.mkdir(parents=True, exist_ok=True)
-            logger.info(f"Upload directory ready: {upload_dir}")
-        except PermissionError as e:
-            logger.error(f"Permission denied creating upload directory: {upload_dir}", exc_info=True)
-            return jsonify({"detail": "Server configuration error: Cannot create upload directory"}), 500
-        
-        # Generate unique filename to prevent collisions
+            return jsonify({"detail": f"Only image files allowed. Got: {file.content_type}"}), 400
+
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+        if file_size > 5 * 1024 * 1024:
+            return jsonify({"detail": "File too large. Maximum 5 MB."}), 400
+        if file_size < 100:
+            return jsonify({"detail": "File appears empty or corrupt."}), 400
+
         ext = os.path.splitext(file.filename)[1].lower()
-        # Sanitize extension
-        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']
-        if ext not in allowed_extensions:
-            logger.warning(f"UPI QR upload failed: Unsupported extension '{ext}' (tenant_id={user['tenant_id']})")
-            return jsonify({"detail": f"Unsupported file extension. Allowed: {', '.join(allowed_extensions)}"}), 400
-        
-        filename = f"upi_qr_{user['tenant_id']}_{uuid.uuid4()}{ext}"
-        filepath = upload_dir / filename
-        
-        # Save file with error handling
-        try:
-            file.save(str(filepath))
-            logger.info(f"✅ UPI QR saved successfully: {filepath}")
-        except Exception as e:
-            logger.error(f"Failed to save UPI QR file: {filepath}", exc_info=True)
-            return jsonify({"detail": f"Failed to save file: {str(e)}"}), 500
-        
-        # Verify file was actually saved and has correct size
-        if not filepath.exists():
-            logger.error(f"UPI QR file not found after save: {filepath}")
-            return jsonify({"detail": "File save verification failed"}), 500
-        
-        saved_size = filepath.stat().st_size
-        if saved_size != file_size:
-            logger.warning(f"UPI QR file size mismatch: expected={file_size}, saved={saved_size}")
-        
-        # Generate public URL
-        # Edge Case: Handle both production and development URLs
-        url = f"{settings.BASE_PUBLIC_URL}/uploads/{filename}"
-        logger.info(f"UPI QR URL generated: {url}")
-        
-        # Update database
+        if ext not in ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'):
+            return jsonify({"detail": f"Unsupported extension '{ext}'."}), 400
+
+        url = _save_upload(file, tag="upi_qr", tenant_id=user['tenant_id'])
+
         with get_db_cursor(commit=True) as cursor:
-            try:
-                cursor.execute(
-                    "UPDATE Tenant SET upi_qr_url = %s, updated_at = now() WHERE id = %s RETURNING id, upi_qr_url",
-                    (url, user['tenant_id'])
-                )
-                result = cursor.fetchone()
-                
-                if not result:
-                    logger.error(f"Tenant not found in database: tenant_id={user['tenant_id']}")
-                    # Clean up uploaded file
-                    filepath.unlink(missing_ok=True)
-                    return jsonify({"detail": "Tenant not found"}), 404
-                
-                logger.info(f"✅ UPI QR URL updated in database: tenant_id={user['tenant_id']}, url={url}")
-                
-            except Exception as e:
-                logger.error(f"Database update failed for UPI QR: tenant_id={user['tenant_id']}", exc_info=True)
-                # Clean up uploaded file
-                filepath.unlink(missing_ok=True)
-                return jsonify({"detail": f"Database error: {str(e)}"}), 500
-        
-        return jsonify({
-            "url": url,
-            "filename": filename,
-            "size": file_size,
-            "message": "UPI QR code uploaded successfully"
-        }), 200
-        
+            cursor.execute(
+                "UPDATE Tenant SET upi_qr_url = %s, updated_at = now() WHERE id = %s RETURNING id",
+                (url, user['tenant_id'])
+            )
+            if not cursor.fetchone():
+                return jsonify({"detail": "Tenant not found"}), 404
+
+        logger.info(f"✅ UPI QR updated: tenant_id={user['tenant_id']}, url={url}")
+        return jsonify({"url": url, "message": "UPI QR code uploaded successfully"}), 200
+
     except Exception as e:
-        logger.error(f"Unexpected error in upload_upi_qr: tenant_id={user.get('tenant_id')}", exc_info=True)
-        return jsonify({"detail": f"Unexpected error: {str(e)}"}), 500
+        logger.error(f"upload_upi_qr error: tenant_id={user.get('tenant_id')}: {e}", exc_info=True)
+        return jsonify({"detail": f"Upload failed: {str(e)}"}), 500
 
 
 @bp.route("/tenant/upload/qr_code", methods=["POST"])
 @require_admin
 def upload_qr_code(user):
-    """
-    Upload generic QR code (Admin only)
-    For tenant customization - any QR code they want to display
-    """
-    import logging
-    logger = logging.getLogger(__name__)
-    
+    """Upload generic QR code (Admin only). Stores to Cloudinary (persistent) or local disk."""
     try:
-        logger.info(f"QR code upload request from tenant_id={user['tenant_id']}")
-        
+        logger.info(f"QR code upload: tenant_id={user['tenant_id']}")
+
         if 'file' not in request.files:
             return jsonify({"detail": "No file provided"}), 400
-        
         file = request.files['file']
-        
         if file.filename == '':
             return jsonify({"detail": "No file selected"}), 400
-        
         if not file.content_type or not file.content_type.startswith('image/'):
-            return jsonify({"detail": f"Only image files are allowed"}), 400
-        
-        # Check file size
+            return jsonify({"detail": "Only image files allowed."}), 400
+
         file.seek(0, 2)
         file_size = file.tell()
         file.seek(0)
-        
-        max_size = 5 * 1024 * 1024  # 5MB
-        if file_size > max_size:
-            return jsonify({"detail": f"File too large. Maximum size is 5MB"}), 400
-        
+        if file_size > 5 * 1024 * 1024:
+            return jsonify({"detail": "File too large. Maximum 5 MB."}), 400
         if file_size < 100:
-            return jsonify({"detail": "File appears to be empty or corrupt"}), 400
-        
-        upload_dir = Path(settings.UPLOAD_DIR).resolve()
-        upload_dir.mkdir(parents=True, exist_ok=True)
-        
+            return jsonify({"detail": "File appears empty or corrupt."}), 400
+
         ext = os.path.splitext(file.filename)[1].lower()
-        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg']
-        if ext not in allowed_extensions:
-            return jsonify({"detail": f"Unsupported file extension"}), 400
-        
-        filename = f"qr_code_{user['tenant_id']}_{uuid.uuid4()}{ext}"
-        filepath = upload_dir / filename
-        
-        file.save(str(filepath))
-        logger.info(f"✅ QR code saved: {filepath}")
-        
-        url = f"{settings.BASE_PUBLIC_URL}/uploads/{filename}"
-        
-        # Update database
+        if ext not in ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'):
+            return jsonify({"detail": f"Unsupported extension '{ext}'."}), 400
+
+        url = _save_upload(file, tag="qr_code", tenant_id=user['tenant_id'])
+
         with get_db_cursor(commit=True) as cursor:
             cursor.execute(
-                "UPDATE Tenant SET qr_code_url = %s, updated_at = now() WHERE id = %s RETURNING id, qr_code_url",
+                "UPDATE Tenant SET qr_code_url = %s, updated_at = now() WHERE id = %s RETURNING id",
                 (url, user['tenant_id'])
             )
-            result = cursor.fetchone()
-            
-            if not result:
-                filepath.unlink(missing_ok=True)
+            if not cursor.fetchone():
                 return jsonify({"detail": "Tenant not found"}), 404
-            
-            logger.info(f"✅ QR code URL updated: tenant_id={user['tenant_id']}")
-        
-        return jsonify({
-            "url": url,
-            "filename": filename,
-            "size": file_size,
-            "message": "QR code uploaded successfully"
-        }), 200
-        
+
+        logger.info(f"✅ QR code updated: tenant_id={user['tenant_id']}, url={url}")
+        return jsonify({"url": url, "message": "QR code uploaded successfully"}), 200
+
     except Exception as e:
-        logger.error(f"Error in upload_qr_code: {str(e)}", exc_info=True)
-        return jsonify({"detail": f"Unexpected error: {str(e)}"}), 500
+        logger.error(f"upload_qr_code error: tenant_id={user.get('tenant_id')}: {e}", exc_info=True)
+        return jsonify({"detail": f"Upload failed: {str(e)}"}), 500
 
 
 @bp.route("/users", methods=["GET"])
