@@ -131,6 +131,7 @@ def update_tenant(user):
             'secretary_name', 'treasurer_name', 'registration_no', 'footer_text',
             'header_text', 'pan_number', 'office_bearers',
             'footer_left_image_name', 'footer_right_image_name',
+            'footer_left_image_designation', 'footer_right_image_designation',
         ]
         
         for field in allowed_fields:
