@@ -53,7 +53,7 @@ class _DonationFormPageState extends State<DonationFormPage> {
       setState(() {
         _categories = [
           {'name': 'GENERAL', 'description': AppLocalizations.of(context)!.categoryGeneral},
-          {'name': 'PRASAD', 'description': AppLocalizations.of(context)!.categoryPrasad},
+          {'name': 'OFFERING', 'description': AppLocalizations.of(context)!.categoryPrasad},
           {'name': 'DECORATION', 'description': AppLocalizations.of(context)!.categoryDecoration},
         ];
       });

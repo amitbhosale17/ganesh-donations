@@ -789,7 +789,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get categoryGeneral => 'General Donation';
 
   @override
-  String get categoryPrasad => 'Prasad';
+  String get categoryPrasad => 'Offering';
 
   @override
   String get categoryDecoration => 'Decoration';

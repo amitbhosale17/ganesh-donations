@@ -27,13 +27,13 @@ class _ExpensePageState extends State<ExpensePage> {
   final List<String> _categories = [
     'GENERAL',
     'DECORATION',
-    'PRASAD',
+    'OFFERING',
     'SOUND',
     'LIGHTING',
     'FOOD',
     'TRANSPORT',
     'PRINTING',
-    'POOJA',
+    'CEREMONY',
     'MISCELLANEOUS',
   ];
 

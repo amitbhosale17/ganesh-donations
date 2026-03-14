@@ -35,7 +35,7 @@ class _BulkDonationPageState extends State<BulkDonationPage> {
       setState(() {
         _categories = [
           {'name': 'GENERAL'},
-          {'name': 'PRASAD'},
+          {'name': 'OFFERING'},
           {'name': 'DECORATION'},
         ];
       });

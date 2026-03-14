@@ -140,16 +140,13 @@ class _CollectorHomeState extends State<CollectorHome> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
 
-                    // Today's Stats
-                    Text(
-                      AppLocalizations.of(context)!.todaysCollection,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(height: 12),
+                    // Overall Balance Hero Card
+                    _buildHeroBalanceCard(),
+                    const SizedBox(height: 16),
+
+                    // Today's Stats (includes section header)
                     _buildTodayStats(),
                     const SizedBox(height: 24),
 
@@ -165,9 +162,9 @@ class _CollectorHomeState extends State<CollectorHome> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisCount: 2,
-                      mainAxisSpacing: 16,
-                      crossAxisSpacing: 16,
-                      childAspectRatio: 1.5,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 1.6,
                       children: [
                         _buildMenuItem(
                           context,
@@ -178,71 +175,62 @@ class _CollectorHomeState extends State<CollectorHome> {
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
-                          builder: (_) => const DonationFormPage(),
+                                builder: (_) => const DonationFormPage(),
+                              ),
+                            );
+                            _loadStats();
+                          },
                         ),
-                      );
-                      _loadStats(); // Refresh stats after adding donation
-                    },
-                  ),
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.schedule,
-                    label: AppLocalizations.of(context)!.myPendingPayments,
-                    color: Colors.orange,
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const CollectorPendingPaymentsPage(),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.schedule,
+                          label: AppLocalizations.of(context)!.myPendingPayments,
+                          color: Colors.orange,
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const CollectorPendingPaymentsPage(),
+                              ),
+                            );
+                            _loadStats();
+                          },
                         ),
-                      );
-                      _loadStats();
-                    },
-                  ),
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.history,
-                    label: AppLocalizations.of(context)!.allDonations,
-                    color: Colors.purple,
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const DonationsHistoryPage(),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.history,
+                          label: AppLocalizations.of(context)!.allDonations,
+                          color: Colors.purple,
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const DonationsHistoryPage(),
+                              ),
+                            );
+                            _loadStats();
+                          },
                         ),
-                      );
-                      _loadStats();
-                    },
-                  ),
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.remove_circle,
-                    label: 'Expenses',
-                    color: Colors.red,
-                    onTap: () async {
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ExpensePage(),
+                        _buildMenuItem(
+                          context,
+                          icon: Icons.remove_circle,
+                          label: 'Expenses',
+                          color: Colors.red,
+                          onTap: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ExpensePage(),
+                              ),
+                            );
+                            _loadStats();
+                          },
                         ),
-                      );
-                      _loadStats();
-                    },
-                  ),
-                  _buildMenuItem(
-                    context,
-                    icon: Icons.receipt_long,
-                    label: AppLocalizations.of(context)!.overallCollection,
-                    color: Colors.blue,
-                    onTap: () {
-                      _showOverallStats();
-                    },
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
 
-              // Recent Donations
+                    // Recent Donations
               Text(
                 AppLocalizations.of(context)!.recentTransactions,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -253,6 +241,83 @@ class _CollectorHomeState extends State<CollectorHome> {
               _buildRecentDonations(),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroBalanceCard() {
+    final overallBalance = _toDouble(stats?['overall']?['net_amount'] ?? 0);
+    final displayBalance = overallBalance < 0 ? 0.0 : overallBalance;
+    final overallDonations = _toDouble(stats?['overall']?['amount'] ?? 0);
+    final overallExpenses = _toDouble(stats?['overall']?['expense_amount'] ?? 0);
+    final fmt = NumberFormat('#,##,###');
+
+    return Card(
+      elevation: 3,
+      color: Colors.green.shade600,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.account_balance_wallet, color: Colors.white, size: 22),
+                const SizedBox(width: 8),
+                const Text(
+                  'Overall Balance',
+                  style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text('All-time', style: TextStyle(color: Colors.white, fontSize: 11)),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '₹${fmt.format(displayBalance)}',
+              style: const TextStyle(color: Colors.white, fontSize: 34, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Divider(color: Colors.white38, height: 1),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Total Donated', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                      Text(
+                        '₹${fmt.format(overallDonations)}',
+                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Total Expenses', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                      Text(
+                        '₹${fmt.format(overallExpenses)}',
+                        style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -269,8 +334,16 @@ class _CollectorHomeState extends State<CollectorHome> {
       );
     }
 
+    final fmt = NumberFormat('#,##,###');
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          AppLocalizations.of(context)!.todaysCollection,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 12),
+        // Main stats: count + total amount
         Row(
           children: [
             Expanded(
@@ -285,67 +358,77 @@ class _CollectorHomeState extends State<CollectorHome> {
             Expanded(
               child: _buildStatCard(
                 AppLocalizations.of(context)!.todayAmount,
-                '₹${NumberFormat('#,##,###').format(_toDouble(today['total_amount']))}',
+                '₹${fmt.format(_toDouble(today['total_amount']))}',
                 Icons.currency_rupee,
                 Colors.green,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
+        // Payment breakdown: 3 compact cards
         Row(
           children: [
-            Expanded(
-              child: _buildStatCard(
-                'UPI',
-                '₹${NumberFormat('#,##,###').format(_toDouble(today['upi_amount']))}',
-                Icons.qr_code,
-                Colors.purple,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                AppLocalizations.of(context)!.cashPayment,
-                '₹${NumberFormat('#,##,###').format(_toDouble(today['cash_amount']))}',
-                Icons.money,
-                Colors.orange,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                'Cheque',
-                '₹${NumberFormat('#,##,###').format(_toDouble(today['cheque_amount']))}',
-                Icons.account_balance,
-                Colors.teal,
-              ),
-            ),
+            Expanded(child: _buildCompactPaymentCard('UPI', _toDouble(today['upi_amount']), Colors.purple, Icons.qr_code)),
+            const SizedBox(width: 8),
+            Expanded(child: _buildCompactPaymentCard('Cash', _toDouble(today['cash_amount']), Colors.orange, Icons.money)),
+            const SizedBox(width: 8),
+            Expanded(child: _buildCompactPaymentCard('Cheque', _toDouble(today['cheque_amount']), Colors.teal, Icons.account_balance)),
           ],
         ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatCard(
-                'Today Expenses',
-                '₹${NumberFormat('#,##,###').format(_toDouble(today['expense_amount']))}',
-                Icons.remove_circle,
-                Colors.red,
-              ),
+        const SizedBox(height: 10),
+        // Today's expenses — full-width highlight row
+        Card(
+          color: Colors.red.shade50,
+          elevation: 1,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Icon(Icons.remove_circle_outline, color: Colors.red.shade600, size: 22),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    "Today's Expenses",
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
+                  ),
+                ),
+                Text(
+                  '₹${fmt.format(_toDouble(today['expense_amount']))}',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.red.shade700),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _buildStatCard(
-                'Overall Balance',
-                '₹${NumberFormat('#,##,###').format(_toDouble(stats?['overall']?['net_amount'] ?? 0))}',
-                Icons.account_balance_wallet,
-                Colors.green,
-              ),
-            ),
-          ],
+          ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCompactPaymentCard(String label, double amount, Color color, IconData icon) {
+    return Card(
+      elevation: 1,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, size: 13, color: color),
+                const SizedBox(width: 4),
+                Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '₹${NumberFormat('#,##,###').format(amount)}',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -620,65 +703,6 @@ class _CollectorHomeState extends State<CollectorHome> {
           );
         },
       ),
-    );
-  }
-
-  void _showOverallStats() {
-    final overall = stats?['overall'];
-    if (overall == null) return;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.overallCollection),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildDialogStat(AppLocalizations.of(context)!.totalDonationsCount, overall['count'].toString()),
-            const SizedBox(height: 12),
-            _buildDialogStat(
-              AppLocalizations.of(context)!.totalAmountValue,
-              '₹${NumberFormat('#,##,###').format(_toDouble(overall['amount']))}',
-            ),
-            const SizedBox(height: 12),
-            _buildDialogStat(
-              'Total Expenses',
-              '₹${NumberFormat('#,##,###').format(_toDouble(overall['expense_amount']))}',
-            ),
-            const Divider(height: 24),
-            _buildDialogStat(
-              'Overall Balance',
-              '₹${NumberFormat('#,##,###').format(_toDouble(overall['net_amount']))}',
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(AppLocalizations.of(context)!.closeButton),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDialogStat(String label, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 16),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.blue,
-          ),
-        ),
-      ],
     );
   }
 
