@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from app.middleware.auth import require_admin
 from app.database import get_db_cursor
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 reports_bp = Blueprint('reports', __name__, url_prefix='/reports')
 
@@ -12,34 +12,34 @@ def get_summary_report(user):
     try:
         tenant_id = user['tenant_id']
         
-        # Get query parameters
         start_date = request.args.get('start_date')
         end_date = request.args.get('end_date')
         collector_id = request.args.get('collector_id')
         method = request.args.get('method')
         
         with get_db_cursor() as cursor:
-            # Build query
             query = """
                 SELECT 
                     COUNT(*) as total_donations,
                     COALESCE(SUM(amount), 0) as total_amount,
                     COALESCE(SUM(CASE WHEN payment_mode = 'UPI' THEN amount ELSE 0 END), 0) as upi_amount,
                     COALESCE(SUM(CASE WHEN payment_mode = 'CASH' THEN amount ELSE 0 END), 0) as cash_amount,
+                    COALESCE(SUM(CASE WHEN payment_mode = 'CHEQUE' THEN amount ELSE 0 END), 0) as cheque_amount,
                     COUNT(CASE WHEN payment_mode = 'UPI' THEN 1 END) as upi_count,
-                    COUNT(CASE WHEN payment_mode = 'CASH' THEN 1 END) as cash_count
+                    COUNT(CASE WHEN payment_mode = 'CASH' THEN 1 END) as cash_count,
+                    COUNT(CASE WHEN payment_mode = 'CHEQUE' THEN 1 END) as cheque_count
                 FROM Donation
                 WHERE tenant_id = %s
+                  AND payment_status IN ('COMPLETED', 'PAID')
             """
             params = [tenant_id]
             
-            # Add filters
             if start_date:
                 query += " AND created_at >= %s"
                 params.append(start_date)
             
             if end_date:
-                query += " AND created_at <= %s"
+                query += " AND created_at <= %s::date + interval '1 day'"
                 params.append(end_date)
             
             if collector_id:
@@ -52,29 +52,47 @@ def get_summary_report(user):
             
             cursor.execute(query, params)
             summary = cursor.fetchone()
-            
-            # Ensure all values are present even if None
+
+            # Expenses for the same date range
+            exp_query = """
+                SELECT COALESCE(SUM(amount), 0) AS expense_total
+                FROM Expense
+                WHERE tenant_id = %s
+            """
+            exp_params = [tenant_id]
+            if start_date:
+                exp_query += " AND expense_date >= %s"
+                exp_params.append(start_date)
+            if end_date:
+                exp_query += " AND expense_date <= %s"
+                exp_params.append(end_date)
+            cursor.execute(exp_query, exp_params)
+            exp_row = cursor.fetchone()
+            expense_total = float(exp_row['expense_total'])
+            total_collected = float(summary['total_amount']) if summary else 0.0
+
             result = {
-                'total_donations': summary['total_donations'] if summary else 0,
-                'total_amount': float(summary['total_amount']) if summary else 0.0,
-                'upi_amount': float(summary['upi_amount']) if summary else 0.0,
-                'cash_amount': float(summary['cash_amount']) if summary else 0.0,
-                'upi_count': summary['upi_count'] if summary else 0,
-                'cash_count': summary['cash_count'] if summary else 0,
+                'total_donations':  summary['total_donations'] if summary else 0,
+                'total_amount':     total_collected,
+                'upi_amount':       float(summary['upi_amount'])   if summary else 0.0,
+                'cash_amount':      float(summary['cash_amount'])   if summary else 0.0,
+                'cheque_amount':    float(summary['cheque_amount']) if summary else 0.0,
+                'upi_count':        summary['upi_count']    if summary else 0,
+                'cash_count':       summary['cash_count']   if summary else 0,
+                'cheque_count':     summary['cheque_count'] if summary else 0,
+                'expense_amount':   expense_total,
+                'net_amount':       total_collected - expense_total,
             }
             
             return jsonify(result)
         
     except Exception as e:
         print(f"Error getting summary report: {e}")
-        # Return zero values instead of error
         return jsonify({
-            'total_donations': 0,
-            'total_amount': 0.0,
-            'upi_amount': 0.0,
-            'cash_amount': 0.0,
-            'upi_count': 0,
-            'cash_count': 0,
+            'total_donations': 0, 'total_amount': 0.0,
+            'upi_amount': 0.0, 'cash_amount': 0.0, 'cheque_amount': 0.0,
+            'upi_count': 0, 'cash_count': 0, 'cheque_count': 0,
+            'expense_amount': 0.0, 'net_amount': 0.0,
         })
 
 @reports_bp.route('/daily', methods=['GET'])
@@ -95,9 +113,11 @@ def get_daily_report(user):
                     COUNT(*) as count,
                     COALESCE(SUM(amount), 0) as total,
                     COALESCE(SUM(CASE WHEN payment_mode = 'UPI' THEN amount ELSE 0 END), 0) as upi_amount,
-                    COALESCE(SUM(CASE WHEN payment_mode = 'CASH' THEN amount ELSE 0 END), 0) as cash_amount
+                    COALESCE(SUM(CASE WHEN payment_mode = 'CASH' THEN amount ELSE 0 END), 0) as cash_amount,
+                    COALESCE(SUM(CASE WHEN payment_mode = 'CHEQUE' THEN amount ELSE 0 END), 0) as cheque_amount
                 FROM Donation
                 WHERE tenant_id = %s
+                  AND payment_status IN ('COMPLETED', 'PAID')
             """
             params = [tenant_id]
             
@@ -149,9 +169,11 @@ def get_collector_report(user):
                     COUNT(d.id) as donation_count,
                     COALESCE(SUM(d.amount), 0) as total_amount,
                     COALESCE(SUM(CASE WHEN d.payment_mode = 'UPI' THEN d.amount ELSE 0 END), 0) as upi_amount,
-                    COALESCE(SUM(CASE WHEN d.payment_mode = 'CASH' THEN d.amount ELSE 0 END), 0) as cash_amount
+                    COALESCE(SUM(CASE WHEN d.payment_mode = 'CASH' THEN d.amount ELSE 0 END), 0) as cash_amount,
+                    COALESCE(SUM(CASE WHEN d.payment_mode = 'CHEQUE' THEN d.amount ELSE 0 END), 0) as cheque_amount
                 FROM "User" u
                 LEFT JOIN Donation d ON u.id = d.collector_id AND d.tenant_id = %s
+                  AND d.payment_status IN ('COMPLETED', 'PAID')
             """
             params = [tenant_id]
             
@@ -204,6 +226,7 @@ def get_top_donors(user):
                     MAX(created_at) as last_donation
                 FROM Donation
                 WHERE tenant_id = %s AND donor_name IS NOT NULL
+                  AND payment_status IN ('COMPLETED', 'PAID')
             """
             params = [tenant_id]
             
@@ -257,6 +280,7 @@ def get_payment_method_analytics(user):
                     COALESCE(AVG(amount), 0) as average
                 FROM Donation
                 WHERE tenant_id = %s
+                  AND payment_status IN ('COMPLETED', 'PAID')
             """
             params = [tenant_id]
             
