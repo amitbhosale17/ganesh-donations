@@ -25,7 +25,7 @@ def get_categories(user):
                 # Return default categories if table doesn't exist
                 return jsonify([
                     {"id": 1, "name": "GENERAL", "description": "General Donation", "display_order": 1},
-                    {"id": 2, "name": "PRASAD", "description": "Prasad", "display_order": 2},
+                    {"id": 2, "name": "OFFERING", "description": "Offering", "display_order": 2},
                     {"id": 3, "name": "DECORATION", "description": "Decoration", "display_order": 3}
                 ])
             
@@ -42,7 +42,7 @@ def get_categories(user):
             if not categories:
                 return jsonify([
                     {"id": 1, "name": "GENERAL", "description": "General Donation", "display_order": 1},
-                    {"id": 2, "name": "PRASAD", "description": "Prasad", "display_order": 2},
+                    {"id": 2, "name": "OFFERING", "description": "Offering", "display_order": 2},
                     {"id": 3, "name": "DECORATION", "description": "Decoration", "display_order": 3}
                 ])
             
@@ -53,7 +53,7 @@ def get_categories(user):
         # Return default categories on error
         return jsonify([
             {"id": 1, "name": "GENERAL", "description": "General Donation", "display_order": 1},
-            {"id": 2, "name": "PRASAD", "description": "Prasad", "display_order": 2},
+            {"id": 2, "name": "OFFERING", "description": "Offering", "display_order": 2},
             {"id": 3, "name": "DECORATION", "description": "Decoration", "display_order": 3}
         ])
 
