@@ -1,0 +1,336 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.example.ganesh_donations"
+4    android:versionCode="1"
+5    android:versionName="1.0.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="36" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:2:5-66
+11-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:2:22-64
+12    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+12-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:3:5-78
+12-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:3:22-76
+13    <uses-permission
+13-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:4:5-107
+14        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+14-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:4:22-78
+15        android:maxSdkVersion="28" />
+15-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:4:79-105
+16    <uses-permission
+16-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:5:5-106
+17        android:name="android.permission.READ_EXTERNAL_STORAGE"
+17-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:5:22-77
+18        android:maxSdkVersion="32" />
+18-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:5:78-104
+19    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+19-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:6:5-81
+19-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:6:22-79
+20    <!--
+21         Required to query activities that can process text, see:
+22         https://developer.android.com/training/package-visibility and
+23         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+24
+25         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin.
+26    -->
+27    <queries>
+27-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:47:5-52:15
+28        <intent>
+28-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:48:9-51:18
+29            <action android:name="android.intent.action.PROCESS_TEXT" />
+29-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:49:13-72
+29-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:49:21-70
+30
+31            <data android:mimeType="text/plain" />
+31-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:50:13-50
+31-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:50:19-48
+32        </intent>
+33    </queries>
+34
+35    <permission
+35-->[androidx.core:core:1.17.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\4015b32f9225c4cd97859e216f0f1040\transformed\core-1.17.0\AndroidManifest.xml:22:5-24:47
+36        android:name="com.example.ganesh_donations.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+36-->[androidx.core:core:1.17.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\4015b32f9225c4cd97859e216f0f1040\transformed\core-1.17.0\AndroidManifest.xml:23:9-81
+37        android:protectionLevel="signature" />
+37-->[androidx.core:core:1.17.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\4015b32f9225c4cd97859e216f0f1040\transformed\core-1.17.0\AndroidManifest.xml:24:9-44
+38
+39    <uses-permission android:name="com.example.ganesh_donations.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+39-->[androidx.core:core:1.17.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\4015b32f9225c4cd97859e216f0f1040\transformed\core-1.17.0\AndroidManifest.xml:26:5-97
+39-->[androidx.core:core:1.17.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\4015b32f9225c4cd97859e216f0f1040\transformed\core-1.17.0\AndroidManifest.xml:26:22-94
+40
+41    <application
+42        android:name="android.app.Application"
+42-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:10:9-42
+43        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+43-->[androidx.core:core:1.17.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\4015b32f9225c4cd97859e216f0f1040\transformed\core-1.17.0\AndroidManifest.xml:28:18-86
+44        android:extractNativeLibs="false"
+45        android:icon="@mipmap/ic_launcher"
+45-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:11:9-43
+46        android:label="Donation"
+46-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:9:9-33
+47        android:networkSecurityConfig="@xml/network_security_config"
+47-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:13:9-69
+48        android:usesCleartextTraffic="true" >
+48-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:12:9-44
+49        <activity
+49-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:14:9-35:20
+50            android:name="com.example.ganesh_donations.MainActivity"
+50-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:15:13-41
+51            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+51-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:20:13-163
+52            android:exported="true"
+52-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:16:13-36
+53            android:hardwareAccelerated="true"
+53-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:21:13-47
+54            android:launchMode="singleTop"
+54-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:17:13-43
+55            android:taskAffinity=""
+55-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:18:13-36
+56            android:theme="@style/LaunchTheme"
+56-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:19:13-47
+57            android:windowSoftInputMode="adjustResize" >
+57-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:22:13-55
+58
+59            <!--
+60                 Specifies an Android theme to apply to this Activity as soon as
+61                 the Android process has started. This theme is visible to the user
+62                 while the Flutter UI initializes. After that, this theme continues
+63                 to determine the Window background behind the Flutter UI.
+64            -->
+65            <meta-data
+65-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:27:13-30:17
+66                android:name="io.flutter.embedding.android.NormalTheme"
+66-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:28:15-70
+67                android:resource="@style/NormalTheme" />
+67-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:29:15-52
+68
+69            <intent-filter>
+69-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:31:13-34:29
+70                <action android:name="android.intent.action.MAIN" />
+70-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:32:17-68
+70-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:32:25-66
+71
+72                <category android:name="android.intent.category.LAUNCHER" />
+72-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:33:17-76
+72-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:33:27-74
+73            </intent-filter>
+74        </activity>
+75        <!--
+76             Don't delete the meta-data below.
+77             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java
+78        -->
+79        <meta-data
+79-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:38:9-40:33
+80            android:name="flutterEmbedding"
+80-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:39:13-44
+81            android:value="2" />
+81-->C:\Personal\Donation\flutter_app\android\app\src\main\AndroidManifest.xml:40:13-30
+82        <!--
+83           Declares a provider which allows us to store files to share in
+84           '.../caches/share_plus' and grant the receiving action access
+85        -->
+86        <provider
+86-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:13:9-21:20
+87            android:name="dev.fluttercommunity.plus.share.ShareFileProvider"
+87-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:14:13-77
+88            android:authorities="com.example.ganesh_donations.flutter.share_provider"
+88-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:15:13-74
+89            android:exported="false"
+89-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:16:13-37
+90            android:grantUriPermissions="true" >
+90-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:17:13-47
+91            <meta-data
+91-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:18:13-20:68
+92                android:name="android.support.FILE_PROVIDER_PATHS"
+92-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:19:17-67
+93                android:resource="@xml/flutter_share_file_paths" />
+93-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:20:17-65
+94        </provider>
+95        <!--
+96           This manifest declared broadcast receiver allows us to use an explicit
+97           Intent when creating a PendingItent to be informed of the user's choice
+98        -->
+99        <receiver
+99-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:26:9-32:20
+100            android:name="dev.fluttercommunity.plus.share.SharePlusPendingIntent"
+100-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:27:13-82
+101            android:exported="false" >
+101-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:28:13-37
+102            <intent-filter>
+102-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:29:13-31:29
+103                <action android:name="EXTRA_CHOSEN_COMPONENT" />
+103-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:30:17-65
+103-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:30:25-62
+104            </intent-filter>
+105        </receiver>
+106
+107        <provider
+107-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:9:9-17:20
+108            android:name="io.flutter.plugins.imagepicker.ImagePickerFileProvider"
+108-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:10:13-82
+109            android:authorities="com.example.ganesh_donations.flutter.image_provider"
+109-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:11:13-74
+110            android:exported="false"
+110-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:12:13-37
+111            android:grantUriPermissions="true" >
+111-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:13:13-47
+112            <meta-data
+112-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:18:13-20:68
+113                android:name="android.support.FILE_PROVIDER_PATHS"
+113-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:19:17-67
+114                android:resource="@xml/flutter_image_picker_file_paths" />
+114-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:20:17-65
+115        </provider> <!-- Trigger Google Play services to install the backported photo picker module. -->
+116        <service
+116-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:19:9-31:19
+117            android:name="com.google.android.gms.metadata.ModuleDependencies"
+117-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:20:13-78
+118            android:enabled="false"
+118-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:21:13-36
+119            android:exported="false" >
+119-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:22:13-37
+120            <intent-filter>
+120-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:24:13-26:29
+121                <action android:name="com.google.android.gms.metadata.MODULE_DEPENDENCIES" />
+121-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:25:17-94
+121-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:25:25-91
+122            </intent-filter>
+123
+124            <meta-data
+124-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:28:13-30:36
+125                android:name="photopicker_activity:0:required"
+125-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:29:17-63
+126                android:value="" />
+126-->[:image_picker_android] C:\Personal\Donation\flutter_app\build\image_picker_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:30:17-33
+127        </service>
+128
+129        <activity
+129-->[:url_launcher_android] C:\Personal\Donation\flutter_app\build\url_launcher_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:8:9-11:74
+130            android:name="io.flutter.plugins.urllauncher.WebViewActivity"
+130-->[:url_launcher_android] C:\Personal\Donation\flutter_app\build\url_launcher_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:9:13-74
+131            android:exported="false"
+131-->[:url_launcher_android] C:\Personal\Donation\flutter_app\build\url_launcher_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:10:13-37
+132            android:theme="@android:style/Theme.NoTitleBar.Fullscreen" />
+132-->[:url_launcher_android] C:\Personal\Donation\flutter_app\build\url_launcher_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:11:13-71
+133
+134        <provider
+134-->[:open_file_android] C:\Personal\Donation\flutter_app\build\open_file_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:9:9-19:20
+135            android:name="com.crazecoder.openfile.FileProvider"
+135-->[:open_file_android] C:\Personal\Donation\flutter_app\build\open_file_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:10:13-64
+136            android:authorities="com.example.ganesh_donations.fileProvider.com.crazecoder.openfile"
+136-->[:open_file_android] C:\Personal\Donation\flutter_app\build\open_file_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:11:13-88
+137            android:exported="false"
+137-->[:open_file_android] C:\Personal\Donation\flutter_app\build\open_file_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:12:13-37
+138            android:grantUriPermissions="true"
+138-->[:open_file_android] C:\Personal\Donation\flutter_app\build\open_file_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:13:13-47
+139            android:requestLegacyExternalStorage="true" >
+139-->[:open_file_android] C:\Personal\Donation\flutter_app\build\open_file_android\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:14:13-56
+140            <meta-data
+140-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:18:13-20:68
+141                android:name="android.support.FILE_PROVIDER_PATHS"
+141-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:19:17-67
+142                android:resource="@xml/filepaths" />
+142-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:20:17-65
+143        </provider>
+144        <provider
+144-->[:printing] C:\Personal\Donation\flutter_app\build\printing\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:8:9-16:20
+145            android:name="net.nfet.flutter.printing.PrintFileProvider"
+145-->[:printing] C:\Personal\Donation\flutter_app\build\printing\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:9:13-71
+146            android:authorities="com.example.ganesh_donations.flutter.printing"
+146-->[:printing] C:\Personal\Donation\flutter_app\build\printing\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:10:13-68
+147            android:exported="false"
+147-->[:printing] C:\Personal\Donation\flutter_app\build\printing\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:11:13-37
+148            android:grantUriPermissions="true" >
+148-->[:printing] C:\Personal\Donation\flutter_app\build\printing\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:12:13-47
+149            <meta-data
+149-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:18:13-20:68
+150                android:name="android.support.FILE_PROVIDER_PATHS"
+150-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:19:17-67
+151                android:resource="@xml/flutter_printing_file_paths" />
+151-->[:share_plus] C:\Personal\Donation\flutter_app\build\share_plus\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml:20:17-65
+152        </provider>
+153
+154        <uses-library
+154-->[androidx.window:window:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\ba18b21e180de95697f7173f8fcc30d1\transformed\window-1.2.0\AndroidManifest.xml:23:9-25:40
+155            android:name="androidx.window.extensions"
+155-->[androidx.window:window:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\ba18b21e180de95697f7173f8fcc30d1\transformed\window-1.2.0\AndroidManifest.xml:24:13-54
+156            android:required="false" />
+156-->[androidx.window:window:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\ba18b21e180de95697f7173f8fcc30d1\transformed\window-1.2.0\AndroidManifest.xml:25:13-37
+157        <uses-library
+157-->[androidx.window:window:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\ba18b21e180de95697f7173f8fcc30d1\transformed\window-1.2.0\AndroidManifest.xml:26:9-28:40
+158            android:name="androidx.window.sidecar"
+158-->[androidx.window:window:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\ba18b21e180de95697f7173f8fcc30d1\transformed\window-1.2.0\AndroidManifest.xml:27:13-51
+159            android:required="false" />
+159-->[androidx.window:window:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\ba18b21e180de95697f7173f8fcc30d1\transformed\window-1.2.0\AndroidManifest.xml:28:13-37
+160
+161        <provider
+161-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\849349835f934b7a7a3fd19a397fbd44\transformed\emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
+162            android:name="androidx.startup.InitializationProvider"
+162-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\849349835f934b7a7a3fd19a397fbd44\transformed\emoji2-1.2.0\AndroidManifest.xml:25:13-67
+163            android:authorities="com.example.ganesh_donations.androidx-startup"
+163-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\849349835f934b7a7a3fd19a397fbd44\transformed\emoji2-1.2.0\AndroidManifest.xml:26:13-68
+164            android:exported="false" >
+164-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\849349835f934b7a7a3fd19a397fbd44\transformed\emoji2-1.2.0\AndroidManifest.xml:27:13-37
+165            <meta-data
+165-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\849349835f934b7a7a3fd19a397fbd44\transformed\emoji2-1.2.0\AndroidManifest.xml:29:13-31:52
+166                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+166-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\849349835f934b7a7a3fd19a397fbd44\transformed\emoji2-1.2.0\AndroidManifest.xml:30:17-75
+167                android:value="androidx.startup" />
+167-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\849349835f934b7a7a3fd19a397fbd44\transformed\emoji2-1.2.0\AndroidManifest.xml:31:17-49
+168            <meta-data
+168-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\7b063733d58b239af3748ae9cbd0fe42\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:29:13-31:52
+169                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+169-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\7b063733d58b239af3748ae9cbd0fe42\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:30:17-78
+170                android:value="androidx.startup" />
+170-->[androidx.lifecycle:lifecycle-process:2.7.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\7b063733d58b239af3748ae9cbd0fe42\transformed\lifecycle-process-2.7.0\AndroidManifest.xml:31:17-49
+171            <meta-data
+171-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:29:13-31:52
+172                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+172-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:30:17-85
+173                android:value="androidx.startup" />
+173-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:31:17-49
+174        </provider>
+175
+176        <receiver
+176-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:34:9-52:20
+177            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+177-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:35:13-76
+178            android:directBootAware="false"
+178-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:36:13-44
+179            android:enabled="true"
+179-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:37:13-35
+180            android:exported="true"
+180-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:38:13-36
+181            android:permission="android.permission.DUMP" >
+181-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:39:13-57
+182            <intent-filter>
+182-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:40:13-42:29
+183                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+183-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:17-91
+183-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:41:25-88
+184            </intent-filter>
+185            <intent-filter>
+185-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:43:13-45:29
+186                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+186-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:17-85
+186-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:44:25-82
+187            </intent-filter>
+188            <intent-filter>
+188-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:46:13-48:29
+189                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+189-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:17-88
+189-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:47:25-85
+190            </intent-filter>
+191            <intent-filter>
+191-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:49:13-51:29
+192                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+192-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:17-95
+192-->[androidx.profileinstaller:profileinstaller:1.4.0] C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\8c2c755b108f0c65554558bce3b95118\transformed\profileinstaller-1.4.0\AndroidManifest.xml:50:25-92
+193            </intent-filter>
+194        </receiver>
+195    </application>
+196
+197</manifest>

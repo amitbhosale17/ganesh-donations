@@ -1,0 +1,20 @@
+@echo off
+"C:\\Users\\Amit.Bhosale\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\cmake.exe" ^
+  "-HC:\\Personal\\flutter\\packages\\flutter_tools\\gradle\\src\\main\\scripts" ^
+  "-DCMAKE_SYSTEM_NAME=Android" ^
+  "-DCMAKE_EXPORT_COMPILE_COMMANDS=ON" ^
+  "-DCMAKE_SYSTEM_VERSION=24" ^
+  "-DANDROID_PLATFORM=android-24" ^
+  "-DANDROID_ABI=armeabi-v7a" ^
+  "-DCMAKE_ANDROID_ARCH_ABI=armeabi-v7a" ^
+  "-DANDROID_NDK=C:\\Users\\Amit.Bhosale\\AppData\\Local\\Android\\sdk\\ndk\\28.2.13676358" ^
+  "-DCMAKE_ANDROID_NDK=C:\\Users\\Amit.Bhosale\\AppData\\Local\\Android\\sdk\\ndk\\28.2.13676358" ^
+  "-DCMAKE_TOOLCHAIN_FILE=C:\\Users\\Amit.Bhosale\\AppData\\Local\\Android\\sdk\\ndk\\28.2.13676358\\build\\cmake\\android.toolchain.cmake" ^
+  "-DCMAKE_MAKE_PROGRAM=C:\\Users\\Amit.Bhosale\\AppData\\Local\\Android\\Sdk\\cmake\\3.22.1\\bin\\ninja.exe" ^
+  "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=C:\\Personal\\Donation\\flutter_app\\build\\app\\intermediates\\cxx\\release\\o4k40y2y\\obj\\armeabi-v7a" ^
+  "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=C:\\Personal\\Donation\\flutter_app\\build\\app\\intermediates\\cxx\\release\\o4k40y2y\\obj\\armeabi-v7a" ^
+  "-BC:\\Personal\\Donation\\flutter_app\\build\\.cxx\\release\\o4k40y2y\\armeabi-v7a" ^
+  -GNinja ^
+  -Wno-dev ^
+  --no-warn-unused-cli ^
+  "-DCMAKE_BUILD_TYPE=release"

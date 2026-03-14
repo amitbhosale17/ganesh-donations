@@ -1,0 +1,2 @@
+C:/Personal/Donation/flutter_app/build/.cxx/release/o4k40y2y/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Personal/Donation/flutter_app/build/.cxx/release/o4k40y2y/armeabi-v7a/CMakeFiles/rebuild_cache.dir

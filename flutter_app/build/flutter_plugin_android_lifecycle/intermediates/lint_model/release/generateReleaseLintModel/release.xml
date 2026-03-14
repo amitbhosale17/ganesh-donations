@@ -1,0 +1,32 @@
+<variant
+    name="release"
+    package="io.flutter.plugins.flutter_plugin_android_lifecycle"
+    minSdkVersion="21"
+    targetSdkVersion="21"
+    mergedManifest="C:\Personal\Donation\flutter_app\build\flutter_plugin_android_lifecycle\intermediates\merged_manifest\release\processReleaseManifest\AndroidManifest.xml"
+    manifestMergeReport="C:\Personal\Donation\flutter_app\build\flutter_plugin_android_lifecycle\outputs\logs\manifest-merger-release-report.txt"
+    proguardFiles="C:\Personal\Donation\flutter_app\build\flutter_plugin_android_lifecycle\intermediates\default_proguard_files\global\proguard-android.txt-8.11.1"
+    consumerProguardFiles="proguard.txt"
+    partialResultsDir="C:\Personal\Donation\flutter_app\build\flutter_plugin_android_lifecycle\intermediates\lint_partial_results\release\lintAnalyzeRelease\out">
+  <buildFeatures
+      namespacing="REQUIRED"/>
+  <sourceProviders>
+    <sourceProvider
+        manifests="src\main\AndroidManifest.xml"
+        javaDirectories="src\main\java;src\release\java;src\main\kotlin;src\release\kotlin"
+        resDirectories="src\main\res;src\release\res"
+        assetsDirectories="src\main\assets;src\release\assets"/>
+  </sourceProviders>
+  <testSourceProviders>
+  </testSourceProviders>
+  <testFixturesSourceProviders>
+  </testFixturesSourceProviders>
+  <artifact
+      classOutputs="C:\Personal\Donation\flutter_app\build\flutter_plugin_android_lifecycle\intermediates\javac\release\compileReleaseJavaWithJavac\classes;C:\Personal\Donation\flutter_app\build\flutter_plugin_android_lifecycle\intermediates\compile_r_class_jar\release\generateReleaseRFile\R.jar"
+      type="MAIN"
+      applicationId="io.flutter.plugins.flutter_plugin_android_lifecycle"
+      generatedSourceFolders="C:\Personal\Donation\flutter_app\build\flutter_plugin_android_lifecycle\generated\ap_generated_sources\release\out"
+      generatedResourceFolders="C:\Personal\Donation\flutter_app\build\flutter_plugin_android_lifecycle\generated\res\resValues\release"
+      desugaredMethodsFiles="C:\Users\Amit.Bhosale\.gradle\caches\8.14\transforms\e4019d1b7ec1f1f5ad7534c8a908e5e8\transformed\D8BackportedDesugaredMethods.txt">
+  </artifact>
+</variant>
