@@ -53,7 +53,7 @@ def get_summary_report(user):
             cursor.execute(query, params)
             summary = cursor.fetchone()
 
-            # Expenses for the same date range
+            # Expenses for the same date range (shown for context)
             exp_query = """
                 SELECT COALESCE(SUM(amount), 0) AS expense_total
                 FROM Expense
@@ -71,17 +71,40 @@ def get_summary_report(user):
             expense_total = float(exp_row['expense_total'])
             total_collected = float(summary['total_amount']) if summary else 0.0
 
+            # Overall (all-time) balance — never scoped to a date range.
+            # Expenses are paid from accumulated funds, so the true available
+            # balance must compare all-time collections vs all-time expenses.
+            cursor.execute("""
+                SELECT COALESCE(SUM(amount), 0) AS all_time_donated
+                FROM Donation
+                WHERE tenant_id = %s
+                  AND payment_status IN ('COMPLETED', 'PAID')
+            """, (tenant_id,))
+            all_donated = float(cursor.fetchone()['all_time_donated'])
+
+            cursor.execute("""
+                SELECT COALESCE(SUM(amount), 0) AS all_time_expenses
+                FROM Expense
+                WHERE tenant_id = %s
+            """, (tenant_id,))
+            all_expenses = float(cursor.fetchone()['all_time_expenses'])
+
             result = {
-                'total_donations':  summary['total_donations'] if summary else 0,
-                'total_amount':     total_collected,
-                'upi_amount':       float(summary['upi_amount'])   if summary else 0.0,
-                'cash_amount':      float(summary['cash_amount'])   if summary else 0.0,
-                'cheque_amount':    float(summary['cheque_amount']) if summary else 0.0,
-                'upi_count':        summary['upi_count']    if summary else 0,
-                'cash_count':       summary['cash_count']   if summary else 0,
-                'cheque_count':     summary['cheque_count'] if summary else 0,
-                'expense_amount':   expense_total,
-                'net_amount':       total_collected - expense_total,
+                'total_donations':    summary['total_donations'] if summary else 0,
+                'total_amount':       total_collected,
+                'upi_amount':         float(summary['upi_amount'])   if summary else 0.0,
+                'cash_amount':        float(summary['cash_amount'])   if summary else 0.0,
+                'cheque_amount':      float(summary['cheque_amount']) if summary else 0.0,
+                'upi_count':          summary['upi_count']    if summary else 0,
+                'cash_count':         summary['cash_count']   if summary else 0,
+                'cheque_count':       summary['cheque_count'] if summary else 0,
+                'expense_amount':     expense_total,
+                # net_amount is period-scoped (kept for backward compat but not shown in UI)
+                'net_amount':         total_collected - expense_total,
+                # overall_net_amount = all-time collected − all-time expenses (always non-negative)
+                'overall_net_amount': all_donated - all_expenses,
+                'overall_donated':    all_donated,
+                'overall_expenses':   all_expenses,
             }
             
             return jsonify(result)
@@ -93,6 +116,7 @@ def get_summary_report(user):
             'upi_amount': 0.0, 'cash_amount': 0.0, 'cheque_amount': 0.0,
             'upi_count': 0, 'cash_count': 0, 'cheque_count': 0,
             'expense_amount': 0.0, 'net_amount': 0.0,
+            'overall_net_amount': 0.0, 'overall_donated': 0.0, 'overall_expenses': 0.0,
         })
 
 @reports_bp.route('/daily', methods=['GET'])
