@@ -31,8 +31,8 @@ def create_donation(user):
     if not amount or not method:
         return jsonify({"detail": "Missing required fields"}), 400
     
-    if method not in ['UPI', 'CASH']:
-        return jsonify({"detail": "method must be UPI or CASH"}), 400
+    if method not in ['UPI', 'CASH', 'CHEQUE']:
+        return jsonify({"detail": "method must be UPI, CASH or CHEQUE"}), 400
     
     if float(amount) <= 0:
         return jsonify({"detail": "amount must be positive"}), 400
@@ -127,7 +127,7 @@ def create_bulk_donations(user):
                         errors.append({"index": idx, "error": "Invalid amount"})
                         continue
                     
-                    if method not in ['UPI', 'CASH']:
+                    if method not in ['UPI', 'CASH', 'CHEQUE']:
                         errors.append({"index": idx, "error": "Invalid payment method"})
                         continue
                     
@@ -329,8 +329,10 @@ def get_donation_stats(user):
             COALESCE(SUM(amount), 0) as total_amount,
             COALESCE(SUM(CASE WHEN payment_mode = 'UPI' THEN amount ELSE 0 END), 0) as upi_amount,
             COALESCE(SUM(CASE WHEN payment_mode = 'CASH' THEN amount ELSE 0 END), 0) as cash_amount,
+            COALESCE(SUM(CASE WHEN payment_mode = 'CHEQUE' THEN amount ELSE 0 END), 0) as cheque_amount,
             COUNT(CASE WHEN payment_mode = 'UPI' THEN 1 END) as upi_count,
-            COUNT(CASE WHEN payment_mode = 'CASH' THEN 1 END) as cash_count
+            COUNT(CASE WHEN payment_mode = 'CASH' THEN 1 END) as cash_count,
+            COUNT(CASE WHEN payment_mode = 'CHEQUE' THEN 1 END) as cheque_count
         FROM Donation
         WHERE tenant_id = %s AND payment_status IN ('COMPLETED', 'PAID')
     """
@@ -354,8 +356,10 @@ def get_donation_stats(user):
             'total_amount': float(stats['total_amount']),
             'upi_amount': float(stats['upi_amount']),
             'cash_amount': float(stats['cash_amount']),
+            'cheque_amount': float(stats['cheque_amount']),
             'upi_count': stats['upi_count'],
             'cash_count': stats['cash_count'],
+            'cheque_count': stats['cheque_count'],
         })
 
 
@@ -523,7 +527,7 @@ def mark_donation_paid(user, donation_id):
             return jsonify({'success': False, 'message': 'Donation already marked as paid'}), 400
         
         # Update payment status and optionally payment method
-        if method and method in ['UPI', 'CASH']:
+        if method and method in ['UPI', 'CASH', 'CHEQUE']:
             cursor.execute("""
                 UPDATE Donation
                 SET payment_status = 'PAID',
