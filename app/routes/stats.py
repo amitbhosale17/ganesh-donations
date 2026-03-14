@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from app.database import get_db_cursor
 from app.middleware.auth import require_auth
 
@@ -42,6 +42,18 @@ def get_today_stats(user):
             """, (tenant_id,))
             
             overall_stats = cursor.fetchone()
+
+            # Today's expense total
+            today_date = date.today()
+            cursor.execute("""
+                SELECT COALESCE(SUM(amount), 0) AS today_expense,
+                       COALESCE(SUM(CASE WHEN expense_date = %s THEN amount ELSE 0 END), 0) AS today_expense_day
+                FROM Expense
+                WHERE tenant_id = %s
+            """, (today_date, tenant_id))
+            expense_row = cursor.fetchone()
+            today_expense  = float(expense_row['today_expense_day'])
+            total_expense  = float(expense_row['today_expense'])
         
         return jsonify({
             'today': {
@@ -50,10 +62,14 @@ def get_today_stats(user):
                 'upi_amount': float(today_stats['upi_amount']),
                 'cash_amount': float(today_stats['cash_amount']),
                 'cheque_amount': float(today_stats['cheque_amount']),
+                'expense_amount': today_expense,
+                'net_amount': float(today_stats['total_amount']) - today_expense,
             },
             'overall': {
                 'count': overall_stats['total_count'],
                 'amount': float(overall_stats['total_amount']),
+                'expense_amount': total_expense,
+                'net_amount': float(overall_stats['total_amount']) - total_expense,
             }
         })
     
@@ -67,10 +83,14 @@ def get_today_stats(user):
                 'upi_amount': 0.0,
                 'cash_amount': 0.0,
                 'cheque_amount': 0.0,
+                'expense_amount': 0.0,
+                'net_amount': 0.0,
             },
             'overall': {
                 'count': 0,
                 'amount': 0.0,
+                'expense_amount': 0.0,
+                'net_amount': 0.0,
             }
         })
 
