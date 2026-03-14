@@ -21,7 +21,8 @@ def get_today_stats(user):
                     COUNT(*) as count,
                     COALESCE(SUM(amount), 0) as total_amount,
                     COALESCE(SUM(CASE WHEN payment_mode = 'UPI' THEN amount ELSE 0 END), 0) as upi_amount,
-                    COALESCE(SUM(CASE WHEN payment_mode = 'CASH' THEN amount ELSE 0 END), 0) as cash_amount
+                    COALESCE(SUM(CASE WHEN payment_mode = 'CASH' THEN amount ELSE 0 END), 0) as cash_amount,
+                    COALESCE(SUM(CASE WHEN payment_mode = 'CHEQUE' THEN amount ELSE 0 END), 0) as cheque_amount
                 FROM Donation
                 WHERE tenant_id = %s 
                 AND created_at >= %s
@@ -48,6 +49,7 @@ def get_today_stats(user):
                 'total_amount': float(today_stats['total_amount']),
                 'upi_amount': float(today_stats['upi_amount']),
                 'cash_amount': float(today_stats['cash_amount']),
+                'cheque_amount': float(today_stats['cheque_amount']),
             },
             'overall': {
                 'count': overall_stats['total_count'],
@@ -64,6 +66,7 @@ def get_today_stats(user):
                 'total_amount': 0.0,
                 'upi_amount': 0.0,
                 'cash_amount': 0.0,
+                'cheque_amount': 0.0,
             },
             'overall': {
                 'count': 0,
