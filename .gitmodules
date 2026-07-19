@@ -1,0 +1,3 @@
+[submodule "api_python"]
+	path = api_python
+	url = https://github.com/amitbhosale17/ganesh-donations.git
